@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pickleball Tournament Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d0f14;--surface:#151820;--surface2:#1c2030;--surface3:#232840;
+  --border:#2a3050;--border2:#3a4570;--text:#e8ecf5;--muted:#6b7599;
+  --accent:#4ade80;--accent2:#38bdf8;--accent3:#f472b6;--warn:#fbbf24;--danger:#f87171;
+  --male:#38bdf8;--female:#f472b6;--male-bg:rgba(56,189,248,0.12);--female-bg:rgba(244,114,182,0.12);
+  --radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+input,select{font-family:'DM Mono',monospace}
+.mono{font-family:'DM Mono',monospace}
+
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem 0;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:.5rem}
+.logo-line{font-size:11px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px}
+.logo-title{font-size:20px;font-weight:800}.logo-accent{color:var(--accent)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 1.5rem;cursor:pointer;color:var(--muted);font-size:14px;font-weight:500;border-right:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--accent);border-right-color:var(--accent);background:rgba(74,222,128,.06)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.nav-section{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;padding:1rem 1.5rem .4rem;margin-top:.5rem}
+.sidebar-footer{margin-top:auto;padding:1rem 1.5rem 0;border-top:1px solid var(--border)}
+.stage-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--accent)}
+.stage-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.main{padding:2rem;overflow-y:auto;min-width:0}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:1.5rem}
+.page-title{font-size:28px;font-weight:800;margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:14px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+.metric{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.metric-val{font-size:26px;font-weight:800;line-height:1}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--surface3)}.btn-accent{background:var(--accent);border-color:var(--accent);color:#0d0f14;font-weight:700}.btn-accent:hover{opacity:.88}
+.btn-sm{padding:3px 10px;font-size:12px}.btn-danger{border-color:var(--danger);color:var(--danger)}.btn-danger:hover{background:rgba(248,113,113,.08)}
+.btn-warn{border-color:var(--warn);color:var(--warn)}.btn-warn:hover{background:rgba(251,191,36,.08)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+input[type=text],input[type=number],select{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;padding:7px 12px;outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--surface2)}
+
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.05em;white-space:nowrap}
+.badge-m{background:var(--male-bg);color:var(--male);border:1px solid rgba(56,189,248,.2)}
+.badge-f{background:var(--female-bg);color:var(--female);border:1px solid rgba(244,114,182,.2)}
+.badge-hc{background:rgba(251,191,36,.1);color:var(--warn);border:1px solid rgba(251,191,36,.2);font-size:10px}
+.badge-qual{background:rgba(74,222,128,.1);color:var(--accent);border:1px solid rgba(74,222,128,.2)}
+
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.rank-num{font-family:'DM Mono';color:var(--muted)}.rank-num.top{color:var(--accent);font-weight:700}
+
+/* Courts */
+.courts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem}
+.court-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;position:relative;overflow:hidden}
+.court-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.court-card.c1::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.court-card.c2::before{background:linear-gradient(90deg,var(--accent2),var(--accent3))}
+.court-card.c3::before{background:linear-gradient(90deg,var(--accent3),var(--warn))}
+.court-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:600}
+.team-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:7px 0;min-height:36px}
+.vs-row{text-align:center;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:2px 0}
+.hc-note{font-size:11px;color:var(--warn);margin-top:6px}
+.rest-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:.75rem}
+.rest-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px}
+
+.round-nav{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap}
+.round-title{font-size:20px;font-weight:800}
+
+.score-match{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.score-match:last-child{border-bottom:none}
+.score-team{flex:1;min-width:100px;font-size:13px;font-weight:500;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.score-team.right{justify-content:flex-end}
+input.score-box{width:54px;text-align:center;font-size:18px;font-weight:700;font-family:'DM Mono',monospace;padding:7px 4px;border-radius:var(--radius)}
+.score-sep{color:var(--muted);font-size:11px;font-weight:700}
+
+.diff-pos{color:var(--accent)}.diff-neg{color:var(--danger)}
+.qual-line td{border-bottom:2px solid rgba(74,222,128,.4)!important}
+
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-top:.75rem}
+.alert-success{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--accent)}
+.alert-warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:var(--warn)}
+.alert-info{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);color:var(--accent2)}
+
+/* Full Schedule Overview */
+.overview-scroll{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+.ov-table{border-collapse:collapse;font-size:12px;min-width:800px;width:100%}
+.ov-table th{background:var(--surface2);color:var(--muted);padding:8px 12px;border:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.ov-table td{border:1px solid var(--border);padding:7px 10px;vertical-align:top}
+.ov-table tr:hover td{background:rgba(255,255,255,.02)}
+.ov-name-cell{font-weight:600;font-size:13px;white-space:nowrap;min-width:100px}
+.cell-active{background:rgba(74,222,128,.04)}
+.cell-rest{background:rgba(107,117,153,.05);text-align:center;color:var(--muted);font-size:12px;font-style:italic;vertical-align:middle}
+.cell-partner{color:var(--accent2);font-size:11px;font-weight:600;margin-bottom:2px}
+.cell-opp{color:var(--accent3);font-size:11px;margin-bottom:2px}
+.cell-ct{font-size:10px;color:var(--muted)}
+.repeat-cell{background:rgba(251,191,36,.08)!important}
+
+/* Pair matrix */
+.matrix-scroll{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);margin-top:1.5rem}
+.mx-table{border-collapse:collapse;font-size:11px}
+.mx-table th,.mx-table td{border:1px solid var(--border);padding:5px 7px;text-align:center;white-space:nowrap}
+.mx-table th{background:var(--surface2);color:var(--muted);font-size:10px}
+.mx-cell-partner{background:rgba(74,222,128,.12);color:var(--accent);font-weight:700}
+.mx-cell-repeat{background:rgba(251,191,36,.15);color:var(--warn);font-weight:700}
+.mx-cell-opp{color:var(--muted)}
+.mx-cell-self{background:var(--surface2);color:var(--border2)}
+
+/* Finals */
+.finals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem}
+.finals-court{border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.fc-high{border-top:3px solid var(--accent)}.fc-mid{border-top:3px solid var(--accent2)}.fc-rot{border-top:3px solid var(--accent3)}
+.fc-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.fc-label.high{color:var(--accent)}.fc-label.mid{color:var(--accent2)}.fc-label.rot{color:var(--accent3)}
+.fc-rule{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+.finals-score-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.finals-score-row:last-child{border-bottom:none}
+.ladder-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:.75rem}
+.ladder-pill{display:flex;align-items:center;gap:6px;border-radius:var(--radius);padding:5px 10px;border:1px solid var(--border)}
+.ladder-pill.court-a{border-left:3px solid var(--accent)}.ladder-pill.court-b{border-left:3px solid var(--accent2)}
+.ladder-pill.court-c{border-left:3px solid var(--accent3)}.ladder-pill.court-rest{opacity:.5}
+
+.sep{border:none;border-top:1px solid var(--border);margin:1rem 0}
+.text-muted{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);font-size:14px;padding:2rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-line">Tournament</div>
+    <div class="logo-title">Pickleball<span class="logo-accent">.</span></div>
+  </div>
+  <span class="nav-section">Setup</span>
+  <div class="nav-item active" onclick="showPage('setup',this)"><span class="nav-dot"></span>Player Roster</div>
+  <span class="nav-section">Stage 1</span>
+  <div class="nav-item" onclick="showPage('fixtures',this)"><span class="nav-dot"></span>Fixtures</div>
+  <div class="nav-item" onclick="showPage('overview',this)"><span class="nav-dot"></span>Full Schedule</div>
+  <div class="nav-item" onclick="showPage('scores',this)"><span class="nav-dot"></span>Enter Scores</div>
+  <div class="nav-item" onclick="showPage('standings',this)"><span class="nav-dot"></span>Standings</div>
+  <span class="nav-section">Stage 2</span>
+  <div class="nav-item" onclick="showPage('finals',this)"><span class="nav-dot"></span>Finals Ladder</div>
+  <div class="nav-item" onclick="showPage('kingofcourt',this)"><span class="nav-dot" style="background:var(--warn)"></span>King of Court</div>
+  <div class="sidebar-footer">
+    <div class="stage-pill" style="margin-bottom:10px"><span class="stage-dot"></span>Stage 1 Active</div>
+    <button class="btn btn-danger" style="width:100%;justify-content:center;font-size:13px" onclick="confirmFullReset()">↺ Reset Everything</button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- SETUP -->
+<div class="page active" id="page-setup">
+  <div class="page-header">
+    <div class="page-title">Player Roster</div>
+    <div class="page-sub">Add players and assign gender. Min 12 required (best with 24 for balanced rest).</div>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+      <input type="text" id="pname" placeholder="Player name" style="width:180px" onkeydown="if(event.key==='Enter')addPlayer()"/>
+      <select id="pgender"><option value="M">Male</option><option value="F">Female</option></select>
+      <button class="btn btn-accent" onclick="addPlayer()">+ Add</button>
+      <button class="btn" onclick="loadSample()" style="margin-left:auto">Load 24 samples</button>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-label">Total</div><div class="metric-val" style="color:var(--accent)" id="m-total">0</div></div>
+      <div class="metric"><div class="metric-label">Male</div><div class="metric-val" style="color:var(--male)" id="m-male">0</div></div>
+      <div class="metric"><div class="metric-label">Female</div><div class="metric-val" style="color:var(--female)" id="m-female">0</div></div>
+      <div class="metric"><div class="metric-label">Rest/round</div><div class="metric-val" id="m-rest">—</div></div>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>#</th><th>Name</th><th>Gender</th><th></th></tr></thead>
+      <tbody id="roster-body"><tr><td colspan="4" class="empty">No players yet</td></tr></tbody></table>
+    </div>
+  </div>
+  <button class="btn btn-accent" onclick="generateFixtures()" style="font-size:15px;padding:10px 24px">Generate All Fixtures →</button>
+  <div id="gen-alert"></div>
+</div>
+
+<!-- FIXTURES -->
+<div class="page" id="page-fixtures">
+  <div class="page-header">
+    <div class="page-title">Fixtures</div>
+    <div class="page-sub">Smart dedup rotation — tracks partner &amp; opponent history. Manual swap available below.</div>
+  </div>
+  <div class="round-nav">
+    <button class="btn" onclick="prevRound()">← Prev</button>
+    <div class="round-title" id="fix-round-title">Round 1 of 8</div>
+    <button class="btn" onclick="nextRound()">Next →</button>
+    <div class="btn-row" style="margin-left:auto">
+      <button class="btn btn-warn" onclick="regenRound()">↻ Regenerate</button>
+      <button class="btn" onclick="gotoOverview()">Full Schedule →</button>
+    </div>
+  </div>
+  <div id="clash-alert"></div>
+  <div id="fixture-courts"></div>
+  <div class="card">
+    <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:6px">Resting this round</div>
+    <div class="rest-wrap" id="rest-list"></div>
+  </div>
+
+  <!-- MANUAL SWAP -->
+  <div class="card" style="border-color:var(--border2)">
+    <div style="font-weight:700;font-size:15px;margin-bottom:6px">Manual Swap</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Swap any two players between any positions — playing ↔ playing or playing ↔ resting. Handicaps recalculate automatically.</div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Player A</div>
+        <select id="swap-a" style="width:200px;padding:8px 10px"></select>
+      </div>
+      <div style="color:var(--muted);padding-bottom:10px;font-size:18px">⇄</div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Player B</div>
+        <select id="swap-b" style="width:200px;padding:8px 10px"></select>
+      </div>
+      <button class="btn btn-accent" onclick="doSwap()" style="padding:9px 20px">Swap Players</button>
+    </div>
+    <div id="swap-alert"></div>
+  </div>
+</div>
+
+<!-- FULL SCHEDULE OVERVIEW -->
+<div class="page" id="page-overview">
+  <div class="page-header">
+    <div class="page-title">Full Schedule</div>
+    <div class="page-sub">Every player across all 8 rounds — partner, opponents, court, and rest at a glance.</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+    <span class="badge" style="background:rgba(56,189,248,.1);color:var(--accent2);border:1px solid rgba(56,189,248,.2)">▲ Partner</span>
+    <span class="badge" style="background:rgba(244,114,182,.1);color:var(--accent3);border:1px solid rgba(244,114,182,.2)">vs Opponents</span>
+    <span class="badge" style="background:rgba(107,117,153,.1);color:var(--muted);border:1px solid rgba(107,117,153,.2)">REST</span>
+    <span class="badge badge-hc">Yellow = repeat pairing</span>
+    <div style="margin-left:auto;font-size:12px" id="ov-clash-summary"></div>
+  </div>
+  <div class="overview-scroll" id="overview-wrap"><div class="empty">Generate fixtures first</div></div>
+
+  <div style="font-size:15px;font-weight:700;margin:2rem 0 .5rem">Partner repeat matrix</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:.75rem">Shows how many times each pair has been teammates. <span style="color:var(--accent)">Green = 1×</span> · <span style="color:var(--warn)">Yellow = 2×+</span></div>
+  <div class="matrix-scroll" id="matrix-wrap"><div class="empty">Generate fixtures first</div></div>
+</div>
+
+<!-- SCORES -->
+<div class="page" id="page-scores">
+  <div class="page-header">
+    <div class="page-title">Enter Scores</div>
+    <div class="page-sub">Enter raw game scores — handicap is factored into results automatically</div>
+  </div>
+  <div class="round-nav">
+    <button class="btn" onclick="scorePrev()">← Prev</button>
+    <div class="round-title" id="score-round-title">Round 1</div>
+    <button class="btn" onclick="scoreNext()">Next →</button>
+  </div>
+  <div class="card" id="score-entry-wrap"><div class="empty">Generate fixtures first</div></div>
+  <div class="btn-row" style="margin-top:.75rem">
+    <button class="btn btn-accent" onclick="saveScores()">Save Scores</button>
+    <button class="btn" style="border-color:rgba(251,191,36,.4);color:var(--warn)" onclick="autoFillScores()" title="Randomly fill scores for this round (testing only)">⚡ Auto-fill Scores</button>
+    <button class="btn" style="border-color:rgba(251,191,36,.2);color:var(--muted)" onclick="autoFillAllRounds()" title="Auto-fill AND save all 8 rounds at once">⚡⚡ Fill All Rounds</button>
+  </div>
+  <div id="save-alert"></div>
+</div>
+
+<!-- STANDINGS -->
+<div class="page" id="page-standings">
+  <div class="page-header">
+    <div class="page-title">Standings</div>
+    <div class="page-sub">Ranked: match pts → point diff → total scored · Top 14 qualify</div>
+  </div>
+  <div class="metrics-row">
+    <div class="metric"><div class="metric-label">Players</div><div class="metric-val" style="color:var(--accent)" id="st-players">0</div></div>
+    <div class="metric"><div class="metric-label">Rounds played</div><div class="metric-val" id="st-rounds">0/8</div></div>
+    <div class="metric"><div class="metric-label">Leader pts</div><div class="metric-val" id="st-leader">—</div></div>
+    <div class="metric"><div class="metric-label">Qualifying</div><div class="metric-val" style="color:var(--accent)">14</div></div>
+  </div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Player</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>Diff</th><th>Scored</th><th>Status</th></tr></thead>
+    <tbody id="standings-body"><tr><td colspan="10" class="empty">No data yet</td></tr></tbody></table>
+  </div>
+  <div id="qual-alert"></div>
+</div>
+
+<!-- FINALS -->
+<div class="page" id="page-finals">
+  <div class="page-header">
+    <div class="page-title">Finals — Ladder Battle</div>
+    <div class="page-sub">~5 rounds × 7 min · Seed 1–4 → Court A · 5–8 → Court B · 9–12 → Court C · 13–14 Rest</div>
+  </div>
+
+  <!-- Seeding rules card -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+    <div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);border-top:3px solid var(--accent);border-radius:var(--radius-lg);padding:.875rem;text-align:center">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Court A · High</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Seeds 1 – 4</div>
+      <div style="font-size:11px;color:var(--text)">Win → <span style="color:var(--accent)">Stay</span></div>
+      <div style="font-size:11px;color:var(--text)">Lose → <span style="color:var(--accent2)">Court B</span></div>
+    </div>
+    <div style="background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);border-top:3px solid var(--accent2);border-radius:var(--radius-lg);padding:.875rem;text-align:center">
+      <div style="font-size:10px;color:var(--accent2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Court B · Mid</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Seeds 5 – 8</div>
+      <div style="font-size:11px;color:var(--text)">Win → <span style="color:var(--accent)">Court A</span></div>
+      <div style="font-size:11px;color:var(--text)">Lose → <span style="color:var(--accent3)">Court C</span></div>
+    </div>
+    <div style="background:rgba(244,114,182,.07);border:1px solid rgba(244,114,182,.25);border-top:3px solid var(--accent3);border-radius:var(--radius-lg);padding:.875rem;text-align:center">
+      <div style="font-size:10px;color:var(--accent3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Court C · Entry</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Seeds 9 – 12</div>
+      <div style="font-size:11px;color:var(--text)">Win → <span style="color:var(--accent2)">Court B</span></div>
+      <div style="font-size:11px;color:var(--text)">Lose → <span style="color:var(--muted)">Rest</span></div>
+    </div>
+    <div style="background:rgba(107,117,153,.07);border:1px solid rgba(107,117,153,.2);border-top:3px solid var(--muted);border-radius:var(--radius-lg);padding:.875rem;text-align:center">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Resting</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Seeds 13 – 14</div>
+      <div style="font-size:11px;color:var(--text)">Re-enter when</div>
+      <div style="font-size:11px;color:var(--text)">Court C drops</div>
+    </div>
+  </div>
+
+  <div class="finals-grid">
+    <div class="finals-court fc-high">
+      <div class="fc-label high">Court A — High <span style="color:var(--muted);font-weight:400;font-size:9px;margin-left:4px">Seeds 1–4</span></div>
+      <div id="fa-players" class="text-muted">No players</div>
+    </div>
+    <div class="finals-court fc-mid">
+      <div class="fc-label mid">Court B — Mid <span style="color:var(--muted);font-weight:400;font-size:9px;margin-left:4px">Seeds 5–8</span></div>
+      <div id="fb-players" class="text-muted">No players</div>
+    </div>
+    <div class="finals-court fc-rot">
+      <div class="fc-label rot">Court C — Entry <span style="color:var(--muted);font-weight:400;font-size:9px;margin-left:4px">Seeds 9–12</span></div>
+      <div id="fc-players" class="text-muted">No players</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:18px;font-weight:800;margin-bottom:1rem">
+      Round <span id="finals-round-num">1</span> / 5
+      <span style="font-size:13px;color:var(--muted);font-weight:400">· 7 min per game</span>
+      <span id="finals-done-badge" style="display:none;margin-left:10px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--accent);font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px">COMPLETE ✓</span>
+    </div>
+    <div id="finals-score-entry"><div class="empty">Set up finals first</div></div>
+    <div class="sep"></div>
+    <div class="btn-row">
+      <button class="btn btn-accent" onclick="resolveFinals()">Apply Results &amp; Move Players</button>
+      <button class="btn" onclick="setupFinals()">Seed from Standings</button>
+      <button class="btn" style="border-color:rgba(251,191,36,.4);color:var(--warn)" onclick="autoFillFinals()" title="Random scores for testing">⚡ Auto-fill</button>
+    </div>
+    <div id="finals-move-log" style="margin-top:.75rem;font-size:12px;color:var(--muted)"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:14px;font-weight:600;margin-bottom:10px">Current Ladder</div>
+    <div class="ladder-wrap" id="finals-ladder"><span class="text-muted">No players assigned</span></div>
+  </div>
+
+  <!-- Round History -->
+  <div class="card" style="margin-top:1rem">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700">Round History</div>
+      <span style="font-size:11px;color:var(--muted)">View past results · Click a round to edit scores</span>
+    </div>
+    <div id="finals-history"><span class="text-muted" style="font-size:13px">No rounds completed yet</span></div>
+  </div>
+
+  <!-- Stage 2 Standings -->
+  <div class="card" style="margin-top:1rem">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700">Stage 2 Standings</div>
+      <span style="font-size:11px;color:var(--muted)">Ranked by wins → point diff → scored · Updates after each round</span>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>#</th><th>Seed</th><th>Player</th><th>MP</th><th>W</th><th>L</th><th>Pts</th><th>Diff</th><th>Scored</th><th>Court</th>
+      </tr></thead>
+      <tbody id="finals-standings-body"><tr><td colspan="10" class="empty">Set up finals to see standings</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- KING OF COURT -->
+<div class="page" id="page-kingofcourt">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div class="page-title" style="color:var(--warn)">King of Court</div>
+      <span style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--warn);font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:.08em">STAGE 2 FINAL</span>
+    </div>
+    <div class="page-sub">Top 4 players · 1 court · 12 min battle → Winning pair plays 4-min decider → Champion crowned</div>
+    <button class="btn" onclick="exportTournamentPDF()" style="margin-top:.5rem;font-size:12px">🖨 Print Summary</button>
+  </div>
+
+  <!-- Top 4 seeding -->
+  <div class="card" style="border-color:rgba(251,191,36,.3)">
+    <div style="font-size:13px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Top 4 Players</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px" id="koc-top4"></div>
+    <div class="btn-row">
+      <button class="btn" style="border-color:rgba(251,191,36,.4);color:var(--warn)" onclick="seedKingOfCourt()">Seed from Standings</button>
+      <span style="font-size:12px;color:var(--muted);align-self:center">or set manually below</span>
+    </div>
+  </div>
+
+  <!-- Manual player pickers -->
+  <div class="card">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Manual Selection</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Seed 1</div>
+        <select id="koc-s1" style="width:100%"></select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Seed 2</div>
+        <select id="koc-s2" style="width:100%"></select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Seed 3</div>
+        <select id="koc-s3" style="width:100%"></select>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Seed 4</div>
+        <select id="koc-s4" style="width:100%"></select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-accent" onclick="applyKocManual()">Set These 4 Players</button>
+    </div>
+  </div>
+
+  <!-- The match bracket SVG -->
+  <div id="koc-bracket"></div>
+
+  <!-- 10-min main match score -->
+  <div class="card" style="border-color:rgba(251,191,36,.2)" id="koc-match-card">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">
+      <span style="color:var(--warn)">&#9679;</span> Main Match
+      <span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:8px">12 minutes · 1 court</span>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Seeds 1&amp;3 vs Seeds 2&amp;4 — Winning pair goes to decider</div>
+    <div id="koc-hc-info" style="margin-bottom:10px;font-size:12px;color:var(--warn);display:none">⚖ Handicap applied at match start</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div id="koc-team-a-label" style="flex:1;min-width:120px;font-size:14px;font-weight:600;display:flex;gap:6px;flex-wrap:wrap"></div>
+      <input type="number" class="score-box" id="koc-score-a" min="0" placeholder="0" style="width:58px"/>
+      <span class="score-sep" style="font-size:16px">—</span>
+      <input type="number" class="score-box" id="koc-score-b" min="0" placeholder="0" style="width:58px"/>
+      <div id="koc-team-b-label" style="flex:1;min-width:120px;font-size:14px;font-weight:600;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-accent" style="background:var(--warn);border-color:var(--warn);color:#0d0f14" onclick="submitKocMain()">Confirm Result → Set Decider</button>
+    </div>
+    <div id="koc-main-alert"></div>
+  </div>
+
+  <!-- Decider match -->
+  <div class="card" style="border-color:rgba(248,113,113,.3);display:none" id="koc-decider-card">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">
+      <span style="color:var(--danger)">&#9679;</span> Championship Decider
+      <span style="font-size:13px;color:var(--muted);font-weight:400;margin-left:8px">4 minutes · winner = Champion</span>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="koc-decider-sub">Winning pair from main match squares off</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div id="koc-dec-p1" style="flex:1;font-size:15px;font-weight:700;display:flex;gap:6px;flex-wrap:wrap"></div>
+      <input type="number" class="score-box" id="koc-dec-score-a" min="0" placeholder="0" style="width:58px"/>
+      <span class="score-sep" style="font-size:16px">—</span>
+      <input type="number" class="score-box" id="koc-dec-score-b" min="0" placeholder="0" style="width:58px"/>
+      <div id="koc-dec-p2" style="flex:1;font-size:15px;font-weight:700;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-accent" style="background:var(--danger);border-color:var(--danger);color:#fff" onclick="crownChampion()">Crown Champion 🏆</button>
+    </div>
+    <div id="koc-dec-alert"></div>
+  </div>
+
+  <!-- Champion display -->
+  <div id="koc-champion" style="display:none">
+    <div style="text-align:center;padding:2.5rem 1rem;background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(74,222,128,.08));border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-lg);margin-top:1rem">
+      <div style="font-size:48px;margin-bottom:.5rem">🏆</div>
+      <div style="font-size:12px;color:var(--warn);text-transform:uppercase;letter-spacing:.2em;font-weight:700;margin-bottom:.5rem">Champion</div>
+      <div id="koc-champion-name" style="font-size:36px;font-weight:800;color:var(--warn);margin-bottom:.25rem"></div>
+      <div id="koc-champion-runner" style="font-size:14px;color:var(--muted);margin-top:.5rem"></div>
+      <button class="btn" style="margin-top:1.5rem;border-color:rgba(251,191,36,.3);color:var(--warn)" onclick="resetKoc()">Reset King of Court</button>
+      <button class="btn btn-accent" style="margin-top:1.5rem" onclick="exportTournamentPDF()">🖨 Print Tournament Summary</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+let players = [];
+let rounds  = [];   // [{courts:[{court,team1[],team2[],handicap1,handicap2}], resting:[]}]
+let scores  = {};   // {roundIdx:{courtNum:{s1,s2}}}
+let viewRound = 0;
+let scoreViewRound = 0;
+let finalsState = {courtA:[],courtB:[],courtC:[],rest:[],round:1};
+let finalsStandings = {}; // pid -> {seed,mp,w,l,pts,scored,conceded,court}
+let finalsRounds = [];    // [{round, courtA, courtB, courtC, scores:{A:{s1,s2},B,C}, log}]
+
+/* ============================================================
+   UTILS
+============================================================ */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function pairKey(idA,idB){
+  return idA<idB ? `${idA}|${idB}` : `${idB}|${idA}`;
+}
+
+function getHandicap(t1,t2){
+  const gc = t => t.map(p=>p.gender).sort().join('');
+  const comp = g => g==='MM'?'MM':g==='FF'?'FF':'MF';
+  const c1=comp(gc(t1)), c2=comp(gc(t2));
+  if(c1===c2)return[0,0];
+  if(c1==='FF'&&c2==='MM')return[5,0]; if(c1==='MM'&&c2==='FF')return[0,5];
+  if(c1==='MF'&&c2==='MM')return[3,0]; if(c1==='MM'&&c2==='MF')return[0,3];
+  if(c1==='FF'&&c2==='MF')return[2,0]; if(c1==='MF'&&c2==='FF')return[0,2];
+  return[0,0];
+}
+
+/* Stage 2 handicap — lower values for 7-min format */
+function getHandicapS2(t1,t2){
+  const gc = t => t.map(p=>p.gender).sort().join('');
+  const comp = g => g==='MM'?'MM':g==='FF'?'FF':'MF';
+  const c1=comp(gc(t1)), c2=comp(gc(t2));
+  if(c1===c2)return[0,0];
+  if(c1==='FF'&&c2==='MM')return[2,0]; if(c1==='MM'&&c2==='FF')return[0,2];
+  if(c1==='MF'&&c2==='MM')return[1,0]; if(c1==='MM'&&c2==='MF')return[0,1];
+  if(c1==='FF'&&c2==='MF')return[1,0]; if(c1==='MF'&&c2==='FF')return[0,1];
+  return[0,0];
+}
+
+/* Build cumulative partner/opponent count from rounds 0..(upTo-1) */
+function buildHistory(upTo){
+  const partnerCount={};
+  const oppCount={};
+  for(let r=0;r<upTo&&r<rounds.length;r++){
+    rounds[r].courts.forEach(c=>{
+      const [a,b]=[c.team1[0].id, c.team1[1].id];
+      const [d,e]=[c.team2[0].id, c.team2[1].id];
+      const pk1=pairKey(a,b); partnerCount[pk1]=(partnerCount[pk1]||0)+1;
+      const pk2=pairKey(d,e); partnerCount[pk2]=(partnerCount[pk2]||0)+1;
+      [a,b].forEach(x=>[d,e].forEach(y=>{
+        const k=pairKey(x,y); oppCount[k]=(oppCount[k]||0)+1;
+      }));
+    });
+  }
+  return {partnerCount,oppCount};
+}
+
+/* Score a candidate arrangement (penalty = bad) */
+function scoreArrangement(groups, history){
+  let penalty=0;
+  groups.forEach(g=>{
+    const [a,b,d,e]=[g[0].id,g[1].id,g[2].id,g[3].id];
+    penalty += (history.partnerCount[pairKey(a,b)]||0)*20;
+    penalty += (history.partnerCount[pairKey(d,e)]||0)*20;
+    [a,b].forEach(x=>[d,e].forEach(y=>{
+      penalty += (history.oppCount[pairKey(x,y)]||0)*5;
+    }));
+  });
+  return penalty;
+}
+
+/* ============================================================
+   SMART ROTATE
+   - No player rests 2 consecutive rounds
+   - Among 200 random trials, pick the arrangement that
+     minimises repeat partners and opponents
+============================================================ */
+function smartRotate(roundIdx){
+  const history = buildHistory(roundIdx);
+  const restCount = players.length - 12;
+
+  // Players who MUST play because they rested last round
+  let mustPlayIds = new Set();
+  if(roundIdx>0 && rounds[roundIdx-1]){
+    rounds[roundIdx-1].resting.forEach(p=>mustPlayIds.add(p.id));
+  }
+
+  const mustPlay  = players.filter(p=>mustPlayIds.has(p.id));
+  const canRest   = players.filter(p=>!mustPlayIds.has(p.id));
+
+  let bestResult=null, bestScore=Infinity;
+  const TRIALS = 300;
+
+  for(let t=0;t<TRIALS;t++){
+    shuffle(canRest);
+    const resting  = canRest.slice(0,restCount);
+    const restIds  = new Set(resting.map(p=>p.id));
+    const playing  = [...mustPlay, ...canRest.filter(p=>!restIds.has(p.id))];
+    if(playing.length!==12) continue;
+
+    shuffle(playing);
+    const groups=[
+      playing.slice(0,4),
+      playing.slice(4,8),
+      playing.slice(8,12)
+    ];
+    const s = scoreArrangement(groups, history);
+    if(s < bestScore){
+      bestScore=s;
+      bestResult={playing:[...playing], resting:[...resting]};
+    }
+  }
+
+  if(!bestResult){
+    // fallback
+    shuffle(players);
+    bestResult={playing:players.slice(0,12), resting:players.slice(12)};
+  }
+
+  const courts=[];
+  for(let c=0;c<3;c++){
+    const t1=[bestResult.playing[c*4],   bestResult.playing[c*4+1]];
+    const t2=[bestResult.playing[c*4+2], bestResult.playing[c*4+3]];
+    const [h1,h2]=getHandicap(t1,t2);
+    courts.push({court:c+1, team1:t1, team2:t2, handicap1:h1, handicap2:h2});
+  }
+  return{courts, resting:bestResult.resting};
+}
+
+/* Detect repeat partner pairs in a given round (for clash warning) */
+function detectClashes(roundIdx){
+  if(roundIdx===0)return[];
+  const history=buildHistory(roundIdx);
+  const rd=rounds[roundIdx];
+  const clashes=[];
+  rd.courts.forEach(c=>{
+    const[a,b]=[c.team1[0].id,c.team1[1].id];
+    const[d,e]=[c.team2[0].id,c.team2[1].id];
+    if((history.partnerCount[pairKey(a,b)]||0)>0)
+      clashes.push(`${c.team1[0].name} & ${c.team1[1].name} (Court ${c.court})`);
+    if((history.partnerCount[pairKey(d,e)]||0)>0)
+      clashes.push(`${c.team2[0].name} & ${c.team2[1].name} (Court ${c.court})`);
+  });
+  return clashes;
+}
+
+/* ============================================================
+   ROSTER
+============================================================ */
+function addPlayer(){
+  const n=document.getElementById('pname').value.trim();
+  const g=document.getElementById('pgender').value;
+  if(!n)return;
+  players.push({name:n,gender:g,id:Symbol('p')});
+  // Symbol can't serialise, use number id instead
+  players[players.length-1].id=Date.now()+Math.random();
+  document.getElementById('pname').value='';
+  renderRoster();
+}
+function removePlayer(id){
+  players=players.filter(p=>p.id!==id);
+  renderRoster();
+}
+function renderRoster(){
+  document.getElementById('m-total').textContent=players.length;
+  document.getElementById('m-male').textContent=players.filter(p=>p.gender==='M').length;
+  document.getElementById('m-female').textContent=players.filter(p=>p.gender==='F').length;
+  document.getElementById('m-rest').textContent=players.length>=12?players.length-12:'—';
+  const tb=document.getElementById('roster-body');
+  if(!players.length){tb.innerHTML='<tr><td colspan="4" class="empty">No players yet</td></tr>';return;}
+  tb.innerHTML=players.map((p,i)=>`<tr>
+    <td class="rank-num">${i+1}</td>
+    <td style="font-weight:600">${p.name}</td>
+    <td><span class="badge badge-${p.gender.toLowerCase()}">${p.gender==='M'?'Male':'Female'}</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="removePlayer(${p.id})">Remove</button></td>
+  </tr>`).join('');
+}
+function loadSample(){
+  players=[];
+  let uid=1;
+  ['Ali','Ben','Chen','Dan','Emir','Faiz','Gary','Hadi','Ivan','Jason','Kai','Leo','Mike','Noor']
+    .forEach(n=>players.push({name:n,gender:'M',id:uid++}));
+  ['Aisha','Bella','Clara','Diana','Eva','Fiona','Grace','Hana','Iris','Jane']
+    .forEach(n=>players.push({name:n,gender:'F',id:uid++}));
+  renderRoster();
+}
+
+/* ============================================================
+   GENERATE
+============================================================ */
+function generateFixtures(){
+  if(players.length<12){
+    showAlert('gen-alert','Need at least 12 players!','warn');return;
+  }
+  rounds=[];scores={};
+  for(let r=0;r<8;r++){
+    const rd=smartRotate(r);
+    rounds.push(rd);
+    scores[r]={};
+    rd.courts.forEach(c=>{scores[r][c.court]={s1:'',s2:''};});
+  }
+  viewRound=0;scoreViewRound=0;
+  showAlert('gen-alert','✓ 8 rounds generated with partner/opponent dedup!','success');
+  setTimeout(()=>document.getElementById('gen-alert').innerHTML='',4000);
+  renderFixtures();
+  showPage('fixtures',document.querySelectorAll('.nav-item')[1]);
+}
+
+/* ============================================================
+   FIXTURES RENDER
+============================================================ */
+function renderFixtures(){
+  if(!rounds.length)return;
+  const rd=rounds[viewRound];
+  document.getElementById('fix-round-title').textContent=`Round ${viewRound+1} of 8`;
+
+  document.getElementById('fixture-courts').innerHTML = renderBracketSVG(rd, viewRound);
+
+  document.getElementById('rest-list').innerHTML=rd.resting.map(p=>
+    `<div class="rest-pill"><span class="badge badge-${p.gender.toLowerCase()}">${p.gender}</span>${p.name}</div>`
+  ).join('');
+
+  // Clash alert
+  const clashes=detectClashes(viewRound);
+  document.getElementById('clash-alert').innerHTML=clashes.length
+    ?`<div class="alert alert-warn" style="margin-bottom:1rem">⚠ Repeat partner(s) this round (unavoidable with this group size): ${clashes.join(' · ')}</div>`
+    :(viewRound>0?`<div class="alert alert-success" style="margin-bottom:.75rem">✓ All partnerships are fresh this round</div>`:'');
+
+  buildSwapDropdowns();
+}
+
+/* ============================================================
+   BRACKET SVG RENDERER
+   Draws a UCL-style bracket for all 3 courts in one view.
+   Layout: Team1 slots on left → bracket arm → court pill → bracket arm → Team2 slots on right
+============================================================ */
+function renderBracketSVG(rd, roundIdx){
+  const W=900, H=340;
+  const courtH=100; // vertical space per court
+  const topPad=20;
+  const slotW=190, slotH=34, slotR=6;
+  const courtPillW=90, courtPillH=40;
+  const cx=W/2;
+
+  // colour per court
+  const courtColors=['#4ade80','#38bdf8','#f472b6'];
+  const courtBg=['rgba(74,222,128,0.08)','rgba(56,189,248,0.08)','rgba(244,114,182,0.08)'];
+
+  // score data
+  const s=scores[roundIdx]||{};
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    style="width:100%;height:auto;display:block;background:#0d0f14;border-radius:12px;margin-bottom:1rem">
+  <defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // Title
+  svg+=`<text x="${cx}" y="18" text-anchor="middle" font-family="Syne,sans-serif" font-size="11"
+    font-weight="700" fill="#6b7599" letter-spacing="3">ROUND ${roundIdx+1} OF 8</text>`;
+
+  rd.courts.forEach((c,i)=>{
+    const cy = topPad + 30 + i*courtH + courtH/2;
+    const color=courtColors[i];
+    const bg=courtBg[i];
+    const sv=s[c.court]||{s1:'',s2:''};
+
+    // Left team slot Y positions (team1 has 2 players stacked)
+    const p1y=cy-slotH/2-2;
+    const p2y=cy+slotH/2+2;
+    const slotLeft=10;
+    const slotRight=W-10-slotW;
+
+    // ---- Left team slots (team1) ----
+    [c.team1[0],c.team1[1]].forEach((p,pi)=>{
+      const sy=pi===0?p1y:p2y;
+      const gColor=p.gender==='M'?'rgba(56,189,248,0.15)':'rgba(244,114,182,0.15)';
+      const tColor=p.gender==='M'?'#38bdf8':'#f472b6';
+      svg+=`<rect x="${slotLeft}" y="${sy-slotH/2}" width="${slotW}" height="${slotH}" rx="${slotR}"
+        fill="${gColor}" stroke="${tColor}" stroke-width="0.8" opacity="0.9"/>`;
+      svg+=`<rect x="${slotLeft}" y="${sy-slotH/2}" width="4" height="${slotH}" rx="2" fill="${tColor}"/>`;
+      svg+=`<text x="${slotLeft+14}" y="${sy+4}" font-family="Syne,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecf5">${p.name}</text>`;
+      svg+=`<text x="${slotLeft+slotW-8}" y="${sy+4}" text-anchor="end" font-family="DM Mono,monospace" font-size="10" fill="${tColor}">${p.gender}</text>`;
+    });
+
+    // ---- Right team slots (team2) ----
+    [c.team2[0],c.team2[1]].forEach((p,pi)=>{
+      const sy=pi===0?p1y:p2y;
+      const gColor=p.gender==='M'?'rgba(56,189,248,0.15)':'rgba(244,114,182,0.15)';
+      const tColor=p.gender==='M'?'#38bdf8':'#f472b6';
+      svg+=`<rect x="${slotRight}" y="${sy-slotH/2}" width="${slotW}" height="${slotH}" rx="${slotR}"
+        fill="${gColor}" stroke="${tColor}" stroke-width="0.8" opacity="0.9"/>`;
+      svg+=`<rect x="${slotRight+slotW-4}" y="${sy-slotH/2}" width="4" height="${slotH}" rx="2" fill="${tColor}"/>`;
+      svg+=`<text x="${slotRight+10}" y="${sy+4}" font-family="Syne,sans-serif" font-size="12.5" font-weight="600" fill="#e8ecf5">${p.name}</text>`;
+      svg+=`<text x="${slotRight+slotW-8}" y="${sy+4}" text-anchor="end" font-family="DM Mono,monospace" font-size="10" fill="${tColor}">${p.gender}</text>`;
+    });
+
+    // ---- Bracket lines left ----
+    const leftEdge=slotLeft+slotW;
+    const armMidX=cx-courtPillW/2-18;
+    // horizontal from each slot to mid
+    svg+=`<line x1="${leftEdge}" y1="${p1y}" x2="${leftEdge+20}" y2="${p1y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    svg+=`<line x1="${leftEdge}" y1="${p2y}" x2="${leftEdge+20}" y2="${p2y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    // vertical connector
+    svg+=`<line x1="${leftEdge+20}" y1="${p1y}" x2="${leftEdge+20}" y2="${p2y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    // horizontal to court pill
+    svg+=`<line x1="${leftEdge+20}" y1="${cy}" x2="${armMidX}" y2="${cy}" stroke="${color}" stroke-width="1.5" opacity="0.6"/>`;
+
+    // ---- Bracket lines right ----
+    const rightEdge=slotRight;
+    const armMidXr=cx+courtPillW/2+18;
+    svg+=`<line x1="${rightEdge-20}" y1="${p1y}" x2="${rightEdge}" y2="${p1y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    svg+=`<line x1="${rightEdge-20}" y1="${p2y}" x2="${rightEdge}" y2="${p2y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    svg+=`<line x1="${rightEdge-20}" y1="${p1y}" x2="${rightEdge-20}" y2="${p2y}" stroke="${color}" stroke-width="1" opacity="0.4"/>`;
+    svg+=`<line x1="${armMidXr}" y1="${cy}" x2="${rightEdge-20}" y2="${cy}" stroke="${color}" stroke-width="1.5" opacity="0.6"/>`;
+
+    // ---- Court centre pill ----
+    const pillX=cx-courtPillW/2;
+    const pillY=cy-courtPillH/2;
+    svg+=`<rect x="${pillX}" y="${pillY}" width="${courtPillW}" height="${courtPillH}" rx="8"
+      fill="${bg}" stroke="${color}" stroke-width="1.5"/>`;
+    svg+=`<text x="${cx}" y="${cy-7}" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" font-weight="700"
+      fill="${color}" letter-spacing="1">COURT ${c.court}</text>`;
+
+    // Score display in pill
+    const scoreVal=sv.s1!==''&&sv.s2!==''?`${sv.s1} — ${sv.s2}`:'vs';
+    svg+=`<text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="DM Mono,monospace" font-size="13" font-weight="700"
+      fill="#e8ecf5">${scoreVal}</text>`;
+
+    // Handicap note under pill
+    if(c.handicap1||c.handicap2){
+      const hcText=c.handicap1>0?`T1 +${c.handicap1}`:c.handicap2>0?`T2 +${c.handicap2}`:'';
+      svg+=`<text x="${cx}" y="${cy+courtPillH/2+14}" text-anchor="middle" font-family="DM Mono,monospace"
+        font-size="9" fill="#fbbf24">⚖ ${hcText} HC</text>`;
+    }
+  });
+
+  // Horizontal dividers
+  for(let i=1;i<3;i++){
+    const dy=topPad+30+i*courtH;
+    svg+=`<line x1="20" y1="${dy}" x2="${W-20}" y2="${dy}" stroke="#2a3050" stroke-width="0.5"/>`;
+  }
+
+  svg+=`</svg>`;
+  return svg;
+}
+
+/* ============================================================
+   MANUAL SWAP
+============================================================ */
+function buildSwapDropdowns(){
+  if(!rounds.length)return;
+  const rd=rounds[viewRound];
+  const entries=[];
+  rd.courts.forEach(c=>{
+    c.team1.forEach(p=>entries.push({p,label:`[Ct${c.court} Team1] ${p.name} (${p.gender})`}));
+    c.team2.forEach(p=>entries.push({p,label:`[Ct${c.court} Team2] ${p.name} (${p.gender})`}));
+  });
+  rd.resting.forEach(p=>entries.push({p,label:`[Resting] ${p.name} (${p.gender})`}));
+  const opts=entries.map(e=>`<option value="${e.p.id}">${e.label}</option>`).join('');
+  document.getElementById('swap-a').innerHTML=opts;
+  document.getElementById('swap-b').innerHTML=opts;
+  if(document.getElementById('swap-b').options.length>1)
+    document.getElementById('swap-b').selectedIndex=1;
+}
+
+function doSwap(){
+  const idA=+document.getElementById('swap-a').value;
+  const idB=+document.getElementById('swap-b').value;
+  if(idA===idB){showAlert('swap-alert','Select two different players!','warn');return;}
+
+  const rd=rounds[viewRound];
+  let pA=null,pB=null;
+
+  // Find in courts
+  const findIn=(arr,id)=>{for(let i=0;i<arr.length;i++){if(arr[i].id===id){const tmp=arr[i];return{arr,i,p:tmp};}}return null;};
+  
+  let locA=null,locB=null;
+  for(const c of rd.courts){
+    if(!locA)locA=findIn(c.team1,idA)||findIn(c.team2,idA);
+    if(!locB)locB=findIn(c.team1,idB)||findIn(c.team2,idB);
+  }
+  if(!locA)locA=findIn(rd.resting,idA);
+  if(!locB)locB=findIn(rd.resting,idB);
+
+  if(!locA||!locB){showAlert('swap-alert','Could not locate both players.','warn');return;}
+
+  // Swap
+  const tmp=locA.arr[locA.i];
+  locA.arr[locA.i]=locB.arr[locB.i];
+  locB.arr[locB.i]=tmp;
+
+  // Recalculate handicaps
+  rd.courts.forEach(c=>{
+    const[h1,h2]=getHandicap(c.team1,c.team2);
+    c.handicap1=h1;c.handicap2=h2;
+  });
+
+  showAlert('swap-alert',`✓ Swapped ${locA.arr[locA.i].name} ⇄ ${locB.arr[locB.i].name}`,'success');
+  setTimeout(()=>document.getElementById('swap-alert').innerHTML='',3000);
+  renderFixtures();
+  // rebuild overview if it was viewed
+  renderOverview();
+}
+
+function prevRound(){if(viewRound>0){viewRound--;renderFixtures();}}
+function nextRound(){if(viewRound<rounds.length-1){viewRound++;renderFixtures();}}
+function regenRound(){
+  rounds[viewRound]=smartRotate(viewRound);
+  scores[viewRound]={};
+  rounds[viewRound].courts.forEach(c=>{scores[viewRound][c.court]={s1:'',s2:''};});
+  renderFixtures();
+  renderOverview();
+}
+function gotoOverview(){
+  showPage('overview',document.querySelectorAll('.nav-item')[2]);
+}
+
+/* ============================================================
+   FULL SCHEDULE OVERVIEW
+============================================================ */
+function renderOverview(){
+  if(!rounds.length){
+    document.getElementById('overview-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';
+    document.getElementById('matrix-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';
+    return;
+  }
+
+  // Total repeat pairs across all rounds
+  let totalRepeats=0;
+  for(let r=1;r<rounds.length;r++) totalRepeats+=detectClashes(r).length;
+  document.getElementById('ov-clash-summary').textContent=
+    totalRepeats===0?'✓ Zero repeat partners across all rounds'
+    :`⚠ ${totalRepeats} repeat partner pairing(s) total`;
+
+  // Build the big table: rows=players, cols=rounds
+  const html=['<table class="ov-table"><thead><tr>'];
+  html.push('<th style="min-width:110px">Player</th>');
+  for(let r=0;r<rounds.length;r++) html.push(`<th>Round ${r+1}</th>`);
+  html.push('</tr></thead><tbody>');
+
+  // Pre-build history snapshots for repeat detection per cell
+  const histSnaps=rounds.map((_,r)=>buildHistory(r));
+
+  players.forEach(p=>{
+    html.push(`<tr><td class="ov-name-cell"><span class="badge badge-${p.gender.toLowerCase()}" style="margin-right:5px">${p.gender}</span>${p.name}</td>`);
+    rounds.forEach((rd,r)=>{
+      let found=false;
+      for(const c of rd.courts){
+        const inT1=c.team1.find(x=>x.id===p.id);
+        const inT2=c.team2.find(x=>x.id===p.id);
+        if(inT1||inT2){
+          const myTeam=inT1?c.team1:c.team2;
+          const oppTeam=inT1?c.team2:c.team1;
+          const partner=myTeam.find(x=>x.id!==p.id);
+          const hc=inT1?c.handicap1:c.handicap2;
+
+          // Check if this partner pair is a repeat
+          const hist=histSnaps[r];
+          const isRepeat=r>0&&(hist.partnerCount[pairKey(p.id,partner.id)]||0)>0;
+
+          html.push(`<td class="cell-active${isRepeat?' repeat-cell':''}">
+            <div class="cell-partner">▲ ${partner.name}</div>
+            <div class="cell-opp">vs ${oppTeam.map(o=>o.name).join(' & ')}</div>
+            <div class="cell-ct">Ct${c.court}${hc>0?` +${hc}HC`:''}</div>
+          </td>`);
+          found=true;break;
+        }
+      }
+      if(!found) html.push('<td class="cell-rest">REST</td>');
+    });
+    html.push('</tr>');
+  });
+  html.push('</tbody></table>');
+  document.getElementById('overview-wrap').innerHTML=html.join('');
+  renderPairMatrix();
+}
+
+function renderPairMatrix(){
+  if(!rounds.length)return;
+  const history=buildHistory(rounds.length);
+  const sorted=[...players].sort((a,b)=>a.name.localeCompare(b.name));
+
+  const html=['<table class="mx-table"><thead><tr><th></th>'];
+  sorted.forEach(p=>html.push(`<th>${p.name}</th>`));
+  html.push('</tr></thead><tbody>');
+
+  sorted.forEach(p=>{
+    html.push(`<tr><td style="background:var(--surface2);font-weight:600;font-size:11px;color:var(--muted)">${p.name}</td>`);
+    sorted.forEach(q=>{
+      if(p.id===q.id){html.push('<td class="mx-cell-self">—</td>');return;}
+      const cnt=history.partnerCount[pairKey(p.id,q.id)]||0;
+      const opp=history.oppCount[pairKey(p.id,q.id)]||0;
+      if(cnt===0&&opp===0){html.push('<td style="color:var(--border2)">·</td>');return;}
+      let cls=cnt>1?'mx-cell-repeat':cnt===1?'mx-cell-partner':'mx-cell-opp';
+      let txt=cnt>0?`${cnt}P`:''+(opp>0?` ${opp}O`:'');
+      html.push(`<td class="${cls}" title="${p.name} & ${q.name}: ${cnt} time(s) partner, ${opp} time(s) opponent">${txt.trim()}</td>`);
+    });
+    html.push('</tr>');
+  });
+  html.push('</tbody></table>');
+  document.getElementById('matrix-wrap').innerHTML=html.join('');
+}
+
+/* ============================================================
+   SCORES
+============================================================ */
+function renderScoreEntry(){
+  if(!rounds.length){document.getElementById('score-entry-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';return;}
+  const rd=rounds[scoreViewRound];
+  document.getElementById('score-round-title').textContent=`Round ${scoreViewRound+1} of 8`;
+  const s=scores[scoreViewRound]||{};
+  document.getElementById('score-entry-wrap').innerHTML=rd.courts.map(c=>{
+    const sv=s[c.court]||{s1:'',s2:''};
+    const t1=c.team1.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    const t2=c.team2.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    const h1=c.handicap1>0?`<span class="badge badge-hc">+${c.handicap1}</span>`:'';
+    const h2=c.handicap2>0?`<span class="badge badge-hc">+${c.handicap2}</span>`:'';
+    return`<div class="score-match">
+      <div class="score-team">${t1} ${h1}</div>
+      <input type="number" class="score-box" id="sc_${scoreViewRound}_${c.court}_1" value="${sv.s1}" min="0" placeholder="0"/>
+      <div class="score-sep">—</div>
+      <input type="number" class="score-box" id="sc_${scoreViewRound}_${c.court}_2" value="${sv.s2}" min="0" placeholder="0"/>
+      <div class="score-team right">${h2} ${t2}</div>
+    </div>`;
+  }).join('');
+}
+function scorePrev(){if(scoreViewRound>0){scoreViewRound--;renderScoreEntry();}}
+function scoreNext(){if(scoreViewRound<rounds.length-1){scoreViewRound++;renderScoreEntry();}}
+function saveScores(){
+  rounds[scoreViewRound].courts.forEach(c=>{
+    const s1=parseInt(document.getElementById(`sc_${scoreViewRound}_${c.court}_1`).value)||0;
+    const s2=parseInt(document.getElementById(`sc_${scoreViewRound}_${c.court}_2`).value)||0;
+    scores[scoreViewRound][c.court]={s1,s2};
+  });
+  // refresh bracket if same round is viewed
+  if(scoreViewRound===viewRound && rounds.length){
+    document.getElementById('fixture-courts').innerHTML=renderBracketSVG(rounds[viewRound],viewRound);
+  }
+  showAlert('save-alert',`✓ Round ${scoreViewRound+1} scores saved`,'success');
+  setTimeout(()=>document.getElementById('save-alert').innerHTML='',3000);
+}
+
+/* ============================================================
+   STANDINGS
+============================================================ */
+function computeStats(){
+  const stats={};
+  players.forEach(p=>{stats[p.id]={...p,mp:0,w:0,d:0,l:0,pts:0,scored:0,conceded:0};});
+  let roundsPlayed=0;
+  for(let r=0;r<rounds.length;r++){
+    const rd=rounds[r],s=scores[r]||{};let any=false;
+    rd.courts.forEach(c=>{
+      const sv=s[c.court];
+      if(!sv||sv.s1===''||sv.s2==='')return;
+      any=true;
+      const tot1=(+sv.s1||0)+c.handicap1, tot2=(+sv.s2||0)+c.handicap2;
+      [...c.team1,...c.team2].forEach(p=>{if(stats[p.id])stats[p.id].mp++;});
+      c.team1.forEach(p=>{
+        if(!stats[p.id])return;
+        stats[p.id].scored+=tot1; stats[p.id].conceded+=(+sv.s2||0);
+        if(tot1>tot2){stats[p.id].w++;stats[p.id].pts++;}
+        else if(tot1===tot2){stats[p.id].d++;stats[p.id].pts++;}
+        else stats[p.id].l++;
+      });
+      c.team2.forEach(p=>{
+        if(!stats[p.id])return;
+        stats[p.id].scored+=tot2; stats[p.id].conceded+=(+sv.s1||0);
+        if(tot2>tot1){stats[p.id].w++;stats[p.id].pts++;}
+        else if(tot1===tot2){stats[p.id].d++;stats[p.id].pts++;}
+        else stats[p.id].l++;
+      });
+    });
+    if(any)roundsPlayed=r+1;
+  }
+  const sorted=Object.values(stats).sort((a,b)=>
+    b.pts-a.pts||((b.scored-b.conceded)-(a.scored-a.conceded))||b.scored-a.scored
+  );
+  return{sorted,roundsPlayed};
+}
+function renderStandings(){
+  const{sorted,roundsPlayed}=computeStats();
+  document.getElementById('st-players').textContent=players.length;
+  document.getElementById('st-rounds').textContent=`${roundsPlayed}/${rounds.length||8}`;
+  document.getElementById('st-leader').textContent=sorted[0]?.pts??'—';
+  const tbody=document.getElementById('standings-body');
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="10" class="empty">No data yet</td></tr>';return;}
+  tbody.innerHTML=sorted.map((p,i)=>{
+    const qual=i<14; const diff=p.scored-p.conceded;
+    return`<tr${i===13?' class="qual-line"':''}>
+      <td class="rank-num${qual?' top':''}">${i+1}</td>
+      <td><span class="badge badge-${p.gender.toLowerCase()}" style="margin-right:5px">${p.gender}</span><strong>${p.name}</strong></td>
+      <td class="mono">${p.mp}</td><td class="mono">${p.w}</td><td class="mono">${p.d}</td><td class="mono">${p.l}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">${p.pts}</td>
+      <td>${diff>0?`<span class="diff-pos">+${diff}</span>`:diff<0?`<span class="diff-neg">${diff}</span>`:`<span style="color:var(--muted)">0</span>`}</td>
+      <td class="mono">${p.scored}</td>
+      <td>${qual?'<span class="badge badge-qual">Qualified</span>':''}</td>
+    </tr>`;
+  }).join('');
+  const qa=document.getElementById('qual-alert');
+  if(roundsPlayed===8&&rounds.length)
+    qa.innerHTML='<div class="alert alert-success">✓ All rounds complete! Top 14 advance to Finals.</div>';
+  else if(roundsPlayed>0)
+    qa.innerHTML=`<div class="alert alert-warn">⏱ ${8-roundsPlayed} round(s) remaining</div>`;
+  else qa.innerHTML='';
+}
+
+/* ============================================================
+   FINALS
+   Seeding:  #1-4  → Court A
+             #5-8  → Court B
+             #9-12 → Court C
+             #13-14 → Rest
+   Movement each round (2v2 per court):
+     Court A: Winning pair stays · Losing pair → Court B
+     Court B: Winning pair → Court A · Losing pair → Court C
+     Court C: Winning pair → Court B · Losing pair → Rest
+     Rest:    First 4 in queue re-enter Court C next round
+              (fill vacant Court C spots from rest queue)
+============================================================ */
+function setupFinals(){
+  const{sorted}=computeStats();
+  const top=sorted.slice(0,14);
+  if(top.length<4){alert('Need at least 4 players with scores. Enter Stage 1 scores first.');return;}
+  finalsState={
+    courtA: top.slice(0,4),
+    courtB: top.slice(4,8),
+    courtC: top.slice(8,12),
+    rest:   top.slice(12,14),
+    round:  1,
+    log:    [],
+    pairings: null
+  };
+  finalsStandings={};
+  finalsRounds=[];
+  top.forEach((p,i)=>{
+    finalsStandings[p.id]={...p, seed:i+1, mp:0, w:0, l:0, pts:0, scored:0, conceded:0, court:'—'};
+  });
+  generateFinalsPairings();
+  renderFinals();
+}
+
+/* Randomly split the 4 players on each court into 2 fresh pairs each round */
+function generateFinalsPairings(){
+  const s=finalsState;
+  const splitCourt=(arr)=>{
+    if(arr.length<4)return{pair1:[],pair2:[]};
+    const a=[...arr]; shuffle(a);
+    return{pair1:[a[0],a[1]],pair2:[a[2],a[3]]};
+  };
+  s.pairings={
+    A: splitCourt(s.courtA),
+    B: splitCourt(s.courtB),
+    C: splitCourt(s.courtC)
+  };
+}
+
+function renderFinals(){
+  const s=finalsState;
+  const fmt=arr=>arr.length
+    ?arr.map((p,i)=>{
+        const seed=['1','2','3','4','5','6','7','8','9','10','11','12','13','14'];
+        return`<span class="badge badge-${p.gender.toLowerCase()}" style="margin:2px" title="Seed ${p._seed||'?'}">${p.name}</span>`;
+      }).join(' ')
+    :'<span class="text-muted" style="font-size:13px">Empty</span>';
+
+  document.getElementById('fa-players').innerHTML=fmt(s.courtA);
+  document.getElementById('fb-players').innerHTML=fmt(s.courtB);
+  document.getElementById('fc-players').innerHTML=fmt(s.courtC);
+  document.getElementById('finals-round-num').textContent=Math.min(s.round,5);
+
+  // ── ROUND 5 COMPLETE: lock entry, show next-stage banner ──
+  if(s.round>5){
+    document.getElementById('finals-round-num').textContent='5';
+    const doneBadge=document.getElementById('finals-done-badge');
+    if(doneBadge) doneBadge.style.display='inline';
+    document.getElementById('finals-score-entry').innerHTML=`
+      <div style="text-align:center;padding:1.5rem 1rem;background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(56,189,248,.06));border:1px solid rgba(74,222,128,.25);border-radius:var(--radius-lg)">
+        <div style="font-size:28px;margin-bottom:.5rem">🏁</div>
+        <div style="font-size:16px;font-weight:800;color:var(--accent);margin-bottom:.4rem">All 5 rounds complete!</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:1.25rem">Ladder Battle is done. Head to King of Court to crown the champion.</div>
+        <button class="btn btn-accent" style="font-size:15px;padding:10px 28px"
+          onclick="showPage('kingofcourt',document.querySelectorAll('.nav-item')[6])">
+          Go to King of Court →
+        </button>
+      </div>`;
+    // hide apply button row
+    const btnCard=document.getElementById('finals-move-log')?.closest('.card');
+    if(btnCard){
+      btnCard.querySelectorAll('.btn-row').forEach(r=>r.style.display='none');
+    }
+    renderFinalsStandings();
+    return;
+  }
+
+  // Score entry: each court shows pair1 vs pair2 with S2 handicap
+  const courts=[
+    {k:'A',l:'Court A',p:s.courtA,color:'var(--accent)'},
+    {k:'B',l:'Court B',p:s.courtB,color:'var(--accent2)'},
+    {k:'C',l:'Court C',p:s.courtC,color:'var(--accent3)'}
+  ];
+  document.getElementById('finals-score-entry').innerHTML=courts.map(c=>{
+    if(c.p.length<4)return`<div style="padding:10px 0;color:var(--muted);font-size:13px">${c.l}: fewer than 4 players — waiting for rotations</div>`;
+    const pair1=c.p.slice(0,2); const pair2=c.p.slice(2,4);
+    const[h1,h2]=getHandicapS2(pair1,pair2);
+    const hb1=h1>0?`<span class="badge badge-hc">+${h1} HC</span>`:'';
+    const hb2=h2>0?`<span class="badge badge-hc">+${h2} HC</span>`:'';
+    const t1=pair1.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    const t2=pair2.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    return`<div class="finals-score-row">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:${c.color};width:65px;flex-shrink:0;text-transform:uppercase">${c.l}</span>
+      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${t1} ${hb1}</div>
+      <input type="number" class="score-box" id="fs_${c.k}_1" min="0" placeholder="0" style="width:50px"/>
+      <span class="score-sep">—</span>
+      <input type="number" class="score-box" id="fs_${c.k}_2" min="0" placeholder="0" style="width:50px"/>
+      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-end">${hb2} ${t2}</div>
+    </div>`;
+  }).join('');
+
+  // Ladder display
+  const all=[
+    ...s.courtA.map((p,i)=>({...p,court:'a',slot:i})),
+    ...s.courtB.map((p,i)=>({...p,court:'b',slot:i})),
+    ...s.courtC.map((p,i)=>({...p,court:'c',slot:i})),
+    ...s.rest.map((p,i)=>({...p,court:'rest',slot:i}))
+  ];
+  document.getElementById('finals-ladder').innerHTML=all.length
+    ?all.map(p=>`<div class="ladder-pill court-${p.court}" title="${p.court==='rest'?'Resting':'Court '+p.court.toUpperCase()+' — Pair '+(p.slot<2?'1':'2')}">
+        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;min-width:30px">${p.court==='rest'?'Rest':'Ct '+p.court.toUpperCase()}</span>
+        <span class="badge badge-${p.gender.toLowerCase()}">${p.gender}</span>
+        <span style="font-size:13px;font-weight:600">${p.name}</span>
+      </div>`).join('')
+    :'<span class="text-muted">No players assigned</span>';
+
+  // Movement log
+  if(s.log&&s.log.length){
+    document.getElementById('finals-move-log').innerHTML=
+      '<strong style="color:var(--text)">Last round moves:</strong> '+s.log.join(' · ');
+  } else {
+    document.getElementById('finals-move-log').innerHTML='';
+  }
+
+  renderFinalsStandings();
+  renderFinalsHistory();
+}
+
+function resolveFinals(){
+  const s=finalsState;
+
+  // Block if all 5 rounds already done
+  if(s.round>5){
+    showAlert('finals-move-log','All 5 rounds are complete! Proceed to King of Court.','warn');
+    return;
+  }
+
+  const gs=(k,n)=>parseInt(document.getElementById(`fs_${k}_${n}`)?.value);
+  const sA1=gs('A',1), sA2=gs('A',2);
+  const sB1=gs('B',1), sB2=gs('B',2);
+  const sC1=gs('C',1), sC2=gs('C',2);
+
+  // Validate — only process courts that have enough players + scores entered
+  const hasA=s.courtA.length>=4&&!isNaN(sA1)&&!isNaN(sA2);
+  const hasB=s.courtB.length>=4&&!isNaN(sB1)&&!isNaN(sB2);
+  const hasC=s.courtC.length>=4&&!isNaN(sC1)&&!isNaN(sC2);
+
+  if(!hasA&&!hasB&&!hasC){
+    showAlert('finals-move-log','Enter at least one court score before applying results.','warn');return;
+  }
+
+  // Save snapshot of this round BEFORE resolving (so we can review/edit later)
+  finalsRounds.push({
+    round: s.round,
+    courtA: [...s.courtA],
+    courtB: [...s.courtB],
+    courtC: [...s.courtC],
+    scores: {
+      A: hasA?{s1:sA1,s2:sA2}:null,
+      B: hasB?{s1:sB1,s2:sB2}:null,
+      C: hasC?{s1:sC1,s2:sC2}:null
+    },
+    log: []
+  });
+
+  // Work on copies
+  let newA=[...s.courtA];
+  let newB=[...s.courtB];
+  let newC=[...s.courtC];
+  let newRest=[...s.rest];
+  const log=[];
+
+  /*
+    Each court: pair1=[0,1] vs pair2=[2,3]
+    Winner pair stays/rises, loser pair drops.
+    We collect the "arrivals" for each court and apply them after
+    processing all three, to avoid order-dependency bugs.
+  */
+
+  let toB_fromA=[];   // A losers → B
+  let toA_fromB=[];   // B winners → A
+  let toC_fromB=[];   // B losers → C
+  let toB_fromC=[];   // C winners → B
+  let toRest_fromC=[]; // C losers → Rest
+  let toC_fromRest=[]; // Rest re-enters C
+
+  // --- Court A ---
+  if(hasA){
+    const[h1,h2]=getHandicapS2(s.courtA.slice(0,2),s.courtA.slice(2,4));
+    const tot1=sA1+h1, tot2=sA2+h2;
+    if(tot1===tot2){
+      log.push('Court A: draw — no movement');
+    } else {
+      const winPair=tot1>tot2?s.courtA.slice(0,2):s.courtA.slice(2,4);
+      const losePair=tot1>tot2?s.courtA.slice(2,4):s.courtA.slice(0,2);
+      const winRaw=tot1>tot2?sA1:sA2; const loseRaw=tot1>tot2?sA2:sA1;
+      const winHc=tot1>tot2?h1:h2; const loseHc=tot1>tot2?h2:h1;
+      recordFinalsResult(winPair,losePair,winRaw+winHc,loseRaw,'A');
+      newA=winPair;
+      toB_fromA=losePair;
+      log.push(`Ct A losers → Ct B: ${losePair.map(p=>p.name).join(' & ')}`);
+    }
+  }
+
+  // --- Court B ---
+  if(hasB){
+    const[h1,h2]=getHandicapS2(s.courtB.slice(0,2),s.courtB.slice(2,4));
+    const tot1=sB1+h1, tot2=sB2+h2;
+    if(tot1===tot2){
+      log.push('Court B: draw — no movement');
+    } else {
+      const winPair=tot1>tot2?s.courtB.slice(0,2):s.courtB.slice(2,4);
+      const losePair=tot1>tot2?s.courtB.slice(2,4):s.courtB.slice(0,2);
+      const winRaw=tot1>tot2?sB1:sB2; const loseRaw=tot1>tot2?sB2:sB1;
+      const winHc=tot1>tot2?h1:h2; const loseHc=tot1>tot2?h2:h1;
+      recordFinalsResult(winPair,losePair,winRaw+winHc,loseRaw,'B');
+      toA_fromB=winPair;
+      toC_fromB=losePair;
+      log.push(`Ct B winners → Ct A: ${winPair.map(p=>p.name).join(' & ')}`);
+      log.push(`Ct B losers → Ct C: ${losePair.map(p=>p.name).join(' & ')}`);
+    }
+  }
+
+  // --- Court C ---
+  if(hasC){
+    const[h1,h2]=getHandicapS2(s.courtC.slice(0,2),s.courtC.slice(2,4));
+    const tot1=sC1+h1, tot2=sC2+h2;
+    if(tot1===tot2){
+      log.push('Court C: draw — no movement');
+    } else {
+      const winPair=tot1>tot2?s.courtC.slice(0,2):s.courtC.slice(2,4);
+      const losePair=tot1>tot2?s.courtC.slice(2,4):s.courtC.slice(0,2);
+      const winRaw=tot1>tot2?sC1:sC2; const loseRaw=tot1>tot2?sC2:sC1;
+      const winHc=tot1>tot2?h1:h2; const loseHc=tot1>tot2?h2:h1;
+      recordFinalsResult(winPair,losePair,winRaw+winHc,loseRaw,'C');
+      toB_fromC=winPair;
+      toRest_fromC=losePair;
+      log.push(`Ct C winners → Ct B: ${winPair.map(p=>p.name).join(' & ')}`);
+      log.push(`Ct C losers → Rest: ${losePair.map(p=>p.name).join(' & ')}`);
+    }
+  }
+
+  // --- Apply movements — CROSS-MIX partners so no one keeps same partner ---
+  //
+  // Each court next round is assembled from one player each of two groups:
+  //   Court A: [A-win0, B-win0] vs [A-win1, B-win1]
+  //   Court B: [A-lose0, C-win0] vs [A-lose1, C-win1]
+  //   Court C: [B-lose0, restOrFiller0] vs [B-lose1, restOrFiller1]
+  //
+  // If a court had no result (not played / draw), it keeps its current lineup.
+
+  const Aw=toB_fromA.length?s.courtA.filter(p=>!toB_fromA.find(x=>x.id===p.id)):[];// A winners
+  const Al=toB_fromA;  // A losers
+  const Bw=toA_fromB;  // B winners
+  const Bl=toC_fromB;  // B losers
+  const Cw=toB_fromC;  // C winners
+  const Cl=toRest_fromC; // C losers
+
+  // Court A next: cross A-winners with B-winners
+  if(hasA&&hasB&&Aw.length>=2&&Bw.length>=2){
+    newA=[Aw[0],Bw[0],Aw[1],Bw[1]];
+    log.push(`Ct A next: ${Aw[0].name}&${Bw[0].name} vs ${Aw[1].name}&${Bw[1].name}`);
+  } else if(hasA&&Aw.length>=2&&!hasB){
+    // No B result — fill with existing B players split in
+    const fill=s.courtB.slice(0,2);
+    newA=[Aw[0],fill[0]||Aw[0],Aw[1],fill[1]||Aw[1]].slice(0,4);
+  } else if(hasB&&!hasA&&Bw.length>=2){
+    // No A result — B winners go up, stay with A stayers cross-split
+    const stayA=s.courtA.slice(0,2);
+    newA=[stayA[0],Bw[0],stayA[1],Bw[1]].slice(0,4);
+  } else if(!hasA&&!hasB){
+    newA=[...s.courtA]; // no changes
+  }
+
+  // Court B next: cross A-losers with C-winners
+  if(hasA&&hasC&&Al.length>=2&&Cw.length>=2){
+    newB=[Al[0],Cw[0],Al[1],Cw[1]];
+    log.push(`Ct B next: ${Al[0].name}&${Cw[0].name} vs ${Al[1].name}&${Cw[1].name}`);
+  } else if(hasA&&!hasC&&Al.length>=2){
+    // No C result — cross A-losers with existing B players
+    const fillB=s.courtB.slice(2,4);
+    newB=[Al[0],fillB[0]||Al[0],Al[1],fillB[1]||Al[1]].slice(0,4);
+  } else if(hasC&&!hasA&&Cw.length>=2){
+    const stayB=s.courtB.slice(0,2);
+    newB=[stayB[0],Cw[0],stayB[1],Cw[1]].slice(0,4);
+  } else if(!hasA&&!hasC&&hasB&&Bw.length>=2){
+    // Only B played — winners go to A handled above, losers go to C
+    const stayB=s.courtB.slice(0,4); newB=stayB;
+  } else if(!hasA&&!hasB&&!hasC){
+    newB=[...s.courtB];
+  }
+
+  // Court C next: cross B-losers with rest queue (or C stayers)
+  if(hasB&&Bl.length>=2){
+    // Pull 2 from rest to pair with B-losers
+    const restFill=newRest.slice(0,2);
+    const usedRestIds=new Set(restFill.map(p=>p.id));
+    newRest=newRest.filter(p=>!usedRestIds.has(p.id));
+    if(restFill.length>=2){
+      newC=[Bl[0],restFill[0],Bl[1],restFill[1]];
+      log.push(`Ct C next: ${Bl[0].name}&${restFill[0].name} vs ${Bl[1].name}&${restFill[1].name}`);
+    } else if(hasC&&Cw.length>=2){
+      // rest empty — cross B-losers with C-winners that stayed
+      newC=[Bl[0],Cw[0],Bl[1],Cw[1]].slice(0,4);
+    } else {
+      newC=[...Bl,...restFill].slice(0,4);
+    }
+    // C losers go to rest queue tail
+    newRest=[...newRest,...Cl];
+  } else if(hasC&&!hasB){
+    const restFill=newRest.slice(0,2);
+    const usedRestIds=new Set(restFill.map(p=>p.id));
+    newRest=[...newRest.filter(p=>!usedRestIds.has(p.id)),...Cl];
+    const cWinKeep=Cw.slice(0,2);
+    newC=[cWinKeep[0],restFill[0]||cWinKeep[0],cWinKeep[1],restFill[1]||cWinKeep[1]].slice(0,4);
+  } else if(!hasB&&!hasC){
+    newC=[...s.courtC];
+  }
+
+  // Update the snapshot log for this round
+  if(finalsRounds.length) finalsRounds[finalsRounds.length-1].log=[...log];
+
+  finalsState={
+    courtA: newA,
+    courtB: newB,
+    courtC: newC,
+    rest:   newRest,
+    round:  s.round+1,
+    log:    log
+  };
+  renderFinals();
+}
+
+/* ============================================================
+   NAV & HELPERS
+============================================================ */
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='standings')renderStandings();
+  if(id==='fixtures'&&rounds.length)renderFixtures();
+  if(id==='scores'&&rounds.length)renderScoreEntry();
+  if(id==='overview')renderOverview();
+  if(id==='finals')renderFinals();
+  if(id==='kingofcourt')renderKingOfCourt();
+}
+/* ============================================================
+   KING OF COURT
+============================================================ */
+let kocState = {
+  players4: [],        // [{...player}] length 4, index 0=seed1..3=seed4
+  teamA: [],           // seeds 1&3
+  teamB: [],           // seeds 2&4
+  mainDone: false,
+  winnerTeam: [],      // 2 players who won main
+  loserTeam: [],
+  champion: null,
+  runnerUp: null
+};
+
+function renderKingOfCourt(){
+  populateKocDropdowns();
+  renderKocTop4();
+  renderKocBracket();
+}
+
+function populateKocDropdowns(){
+  if(!players.length)return;
+  const opts=players.map(p=>`<option value="${p.id}">${p.name} (${p.gender})</option>`).join('');
+  ['koc-s1','koc-s2','koc-s3','koc-s4'].forEach((id,i)=>{
+    document.getElementById(id).innerHTML=opts;
+    // default to first 4 players if available
+    const sel=document.getElementById(id);
+    if(players[i]) sel.value=players[i].id;
+  });
+}
+
+function seedKingOfCourt(){
+  const{sorted}=computeStats();
+  const top4=sorted.slice(0,4);
+  if(top4.length<4){showAlert('koc-main-alert','Need at least 4 players with match data. Enter scores first or use manual selection.','warn');return;}
+  kocState.players4=top4;
+  setKocTeams();
+  renderKocTop4();
+  renderKocBracket();
+  renderKocMatchLabels();
+  resetKocCards();
+}
+
+function applyKocManual(){
+  const ids=['koc-s1','koc-s2','koc-s3','koc-s4'].map(id=>+document.getElementById(id).value);
+  if(new Set(ids).size<4){showAlert('koc-main-alert','Select 4 different players!','warn');return;}
+  kocState.players4=ids.map(id=>players.find(p=>p.id===id)).filter(Boolean);
+  if(kocState.players4.length<4){showAlert('koc-main-alert','Could not find all 4 players.','warn');return;}
+  setKocTeams();
+  renderKocTop4();
+  renderKocBracket();
+  renderKocMatchLabels();
+  resetKocCards();
+}
+
+function setKocTeams(){
+  const[s1,s2,s3,s4]=kocState.players4;
+  kocState.teamA=[s1,s3]; // seeds 1&3
+  kocState.teamB=[s2,s4]; // seeds 2&4
+  kocState.mainDone=false;
+  kocState.winnerTeam=[];
+  kocState.loserTeam=[];
+  kocState.champion=null;
+}
+
+function resetKocCards(){
+  document.getElementById('koc-match-card').style.display='';
+  document.getElementById('koc-decider-card').style.display='none';
+  document.getElementById('koc-champion').style.display='none';
+  document.getElementById('koc-score-a').value='';
+  document.getElementById('koc-score-b').value='';
+  document.getElementById('koc-main-alert').innerHTML='';
+}
+
+function renderKocTop4(){
+  const el=document.getElementById('koc-top4');
+  if(!kocState.players4.length){
+    el.innerHTML='<div style="color:var(--muted);font-size:13px;grid-column:1/-1">Seed from standings or set manually</div>';
+    return;
+  }
+  const seedColors=['#fbbf24','#e8ecf5','#f472b6','#38bdf8'];
+  const seedLabels=['🥇 Seed 1','🥈 Seed 2','🥉 Seed 3','4️⃣ Seed 4'];
+  el.innerHTML=kocState.players4.map((p,i)=>`
+    <div style="background:var(--surface2);border:1px solid ${seedColors[i]}33;border-top:3px solid ${seedColors[i]};border-radius:var(--radius-lg);padding:.875rem;text-align:center">
+      <div style="font-size:10px;color:${seedColors[i]};font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${seedLabels[i]}</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px">${p.name}</div>
+      <span class="badge badge-${p.gender.toLowerCase()}">${p.gender==='M'?'Male':'Female'}</span>
+    </div>`).join('');
+}
+
+function renderKocBracket(){
+  const el=document.getElementById('koc-bracket');
+  if(!kocState.players4.length){el.innerHTML='';return;}
+  const [s1,s2,s3,s4]=kocState.players4;
+  const W=780,H=220;
+  const slotW=160,slotH=32,R=6;
+  const cx=W/2;
+
+  // colour helpers
+  const gc=p=>p.gender==='M'?'#38bdf8':'#f472b6';
+  const gbg=p=>p.gender==='M'?'rgba(56,189,248,0.12)':'rgba(244,114,182,0.12)';
+
+  const slot=(x,y,p,right=false)=>{
+    const c=gc(p),bg=gbg(p);
+    const tx=right?x+10:x+10;
+    return`<rect x="${x}" y="${y-slotH/2}" width="${slotW}" height="${slotH}" rx="${R}" fill="${bg}" stroke="${c}" stroke-width="0.8"/>
+      <rect x="${right?x+slotW-4:x}" y="${y-slotH/2}" width="4" height="${slotH}" rx="2" fill="${c}"/>
+      <text x="${tx+8}" y="${y+4}" font-family="Syne,sans-serif" font-size="12" font-weight="600" fill="#e8ecf5">${p.name}</text>
+      <text x="${x+slotW-10}" y="${y+4}" text-anchor="end" font-family="DM Mono,monospace" font-size="10" fill="${c}">${p.gender}</text>`;
+  };
+
+  // Team A: s1 top-left, s3 bottom-left
+  const aY1=70,aY2=130;
+  const bY1=70,bY2=130;
+  const leftX=10,rightX=W-10-slotW;
+  const armL=leftX+slotW,armR=rightX;
+  const midX=cx-60,midW=120,midH=50,midY=H/2;
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    style="width:100%;height:auto;display:block;background:#0d0f14;border-radius:12px;margin-bottom:1rem">`;
+
+  // Slots
+  svg+=slot(leftX,aY1,s1);
+  svg+=slot(leftX,aY2,s3);
+  svg+=slot(rightX,bY1,s2,true);
+  svg+=slot(rightX,bY2,s4,true);
+
+  // Team labels
+  svg+=`<text x="${leftX}" y="48" font-family="Syne,sans-serif" font-size="10" font-weight="700" fill="rgba(251,191,36,.7)" letter-spacing="1">TEAM A — Seeds 1 &amp; 3</text>`;
+  svg+=`<text x="${rightX+slotW}" y="48" text-anchor="end" font-family="Syne,sans-serif" font-size="10" font-weight="700" fill="rgba(56,189,248,.7)" letter-spacing="1">Seeds 2 &amp; 4 — TEAM B</text>`;
+
+  // Left bracket arms
+  svg+=`<line x1="${armL}" y1="${aY1}" x2="${armL+22}" y2="${aY1}" stroke="#fbbf24" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${armL}" y1="${aY2}" x2="${armL+22}" y2="${aY2}" stroke="#fbbf24" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${armL+22}" y1="${aY1}" x2="${armL+22}" y2="${aY2}" stroke="#fbbf24" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${armL+22}" y1="${H/2}" x2="${midX}" y2="${H/2}" stroke="#fbbf24" stroke-width="1.5" opacity=".7"/>`;
+
+  // Right bracket arms
+  svg+=`<line x1="${armR-22}" y1="${bY1}" x2="${armR}" y2="${bY1}" stroke="#38bdf8" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${armR-22}" y1="${bY2}" x2="${armR}" y2="${bY2}" stroke="#38bdf8" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${armR-22}" y1="${bY1}" x2="${armR-22}" y2="${bY2}" stroke="#38bdf8" stroke-width="1" opacity=".5"/>`;
+  svg+=`<line x1="${midX+midW}" y1="${H/2}" x2="${armR-22}" y2="${H/2}" stroke="#38bdf8" stroke-width="1.5" opacity=".7"/>`;
+
+  // Centre match pill
+  svg+=`<rect x="${midX}" y="${midY-midH/2}" width="${midW}" height="${midH}" rx="10"
+    fill="rgba(251,191,36,0.07)" stroke="#fbbf24" stroke-width="1.5"/>`;
+  svg+=`<text x="${cx}" y="${midY-10}" text-anchor="middle" font-family="Syne,sans-serif" font-size="9" font-weight="700" fill="#fbbf24" letter-spacing="1">KING OF COURT</text>`;
+  svg+=`<text x="${cx}" y="${midY+5}" text-anchor="middle" font-family="DM Mono,monospace" font-size="11" fill="#e8ecf5">10 min</text>`;
+  svg+=`<text x="${cx}" y="${midY+18}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#6b7599">1 court</text>`;
+
+  // Decider arrow at bottom
+  svg+=`<text x="${cx}" y="${H-12}" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" font-weight="700" fill="var(--danger)" opacity=".8" letter-spacing="1">↓ WINNERS → 4-MIN DECIDER → CHAMPION</text>`;
+
+  svg+=`</svg>`;
+  el.innerHTML=svg;
+}
+
+function renderKocMatchLabels(){
+  const{teamA,teamB}=kocState;
+  const[h1,h2]=getHandicapKoc(teamA,teamB);
+  const fmt=(team,hc)=>team.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ')
+    +(hc>0?` <span class="badge badge-hc">+${hc} HC</span>`:'');
+  document.getElementById('koc-team-a-label').innerHTML=fmt(teamA,h1);
+  document.getElementById('koc-team-b-label').innerHTML=fmt(teamB,h2);
+  const hcInfo=document.getElementById('koc-hc-info');
+  if(hcInfo) hcInfo.style.display=(h1||h2)?'block':'none';
+}
+
+function submitKocMain(){
+  if(!kocState.players4.length){showAlert('koc-main-alert','Set up players first!','warn');return;}
+  const sA=parseInt(document.getElementById('koc-score-a').value);
+  const sB=parseInt(document.getElementById('koc-score-b').value);
+  if(isNaN(sA)||isNaN(sB)){showAlert('koc-main-alert','Enter scores for both teams.','warn');return;}
+  const[h1,h2]=getHandicapKoc(kocState.teamA,kocState.teamB);
+  const totA=sA+h1, totB=sB+h2;
+  if(totA===totB){showAlert('koc-main-alert','No draws allowed in King of Court! One team must score more (including handicap).','warn');return;}
+  const winner=totA>totB?kocState.teamA:kocState.teamB;
+  const loser =totA>totB?kocState.teamB:kocState.teamA;
+  kocState.winnerTeam=winner;
+  kocState.loserTeam=loser;
+  kocState.mainDone=true;
+  kocState.mainScore={a:sA,b:sB,totA,totB,h1,h2};
+  const fmt=team=>team.map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+  document.getElementById('koc-dec-p1').innerHTML=fmt([winner[0]]);
+  document.getElementById('koc-dec-p2').innerHTML=fmt([winner[1]]);
+  document.getElementById('koc-decider-sub').innerHTML=
+    `Winning pair: ${fmt(winner)} — now play 1v1 to crown the Champion`;
+  document.getElementById('koc-decider-card').style.display='';
+  document.getElementById('koc-dec-score-a').value='';
+  document.getElementById('koc-dec-score-b').value='';
+  showAlert('koc-main-alert',`✓ Winners: ${winner.map(p=>p.name).join(' & ')} (${totA}—${totB} incl. HC) advance to decider!`,'success');
+}
+
+function crownChampion(){
+  const sA=parseInt(document.getElementById('koc-dec-score-a').value);
+  const sB=parseInt(document.getElementById('koc-dec-score-b').value);
+  if(isNaN(sA)||isNaN(sB)){showAlert('koc-dec-alert','Enter decider scores.','warn');return;}
+  if(sA===sB){showAlert('koc-dec-alert','No draws in the decider! One player must win.','warn');return;}
+
+  const champion=sA>sB?kocState.winnerTeam[0]:kocState.winnerTeam[1];
+  const runnerUp =sA>sB?kocState.winnerTeam[1]:kocState.winnerTeam[0];
+  kocState.champion=champion;
+  kocState.runnerUp=runnerUp;
+
+  document.getElementById('koc-champion-name').textContent=champion.name;
+  document.getElementById('koc-champion-runner').innerHTML=
+    `Runner-up: <strong style="color:var(--text)">${runnerUp.name}</strong> &nbsp;·&nbsp; 3rd/4th: ${kocState.loserTeam.map(p=>p.name).join(' & ')}`;
+  document.getElementById('koc-champion').style.display='';
+  document.getElementById('koc-match-card').style.display='none';
+  document.getElementById('koc-decider-card').style.display='none';
+}
+
+function resetKoc(){
+  kocState={players4:[],teamA:[],teamB:[],mainDone:false,winnerTeam:[],loserTeam:[],champion:null,runnerUp:null};
+  document.getElementById('koc-top4').innerHTML='<div style="color:var(--muted);font-size:13px;grid-column:1/-1">Seed from standings or set manually</div>';
+  document.getElementById('koc-bracket').innerHTML='';
+  document.getElementById('koc-match-card').style.display='';
+  document.getElementById('koc-decider-card').style.display='none';
+  document.getElementById('koc-champion').style.display='none';
+  document.getElementById('koc-team-a-label').innerHTML='';
+  document.getElementById('koc-team-b-label').innerHTML='';
+  document.getElementById('koc-main-alert').innerHTML='';
+  document.getElementById('koc-dec-alert').innerHTML='';
+}
+
+/* ============================================================
+   AUTO-FILL (TESTING)
+============================================================ */
+function randScore(){
+  // Returns two different scores between 0-30, never equal
+  let a=Math.floor(Math.random()*21)+5;
+  let b=Math.floor(Math.random()*21)+5;
+  while(b===a) b=Math.floor(Math.random()*21)+5;
+  return[a,b];
+}
+
+// Fill score inputs for the current Stage 1 round
+function autoFillScores(){
+  if(!rounds.length){showAlert('save-alert','Generate fixtures first!','warn');return;}
+  const rd=rounds[scoreViewRound];
+  rd.courts.forEach(c=>{
+    const[s1,s2]=randScore();
+    const el1=document.getElementById(`sc_${scoreViewRound}_${c.court}_1`);
+    const el2=document.getElementById(`sc_${scoreViewRound}_${c.court}_2`);
+    if(el1)el1.value=s1;
+    if(el2)el2.value=s2;
+  });
+}
+
+// Auto-fill AND save all 8 rounds in one click
+function autoFillAllRounds(){
+  if(!rounds.length){showAlert('save-alert','Generate fixtures first!','warn');return;}
+  for(let r=0;r<rounds.length;r++){
+    rounds[r].courts.forEach(c=>{
+      const[s1,s2]=randScore();
+      scores[r][c.court]={s1,s2};
+    });
+  }
+  renderScoreEntry(); // refresh visible round
+  showAlert('save-alert',`✓ All ${rounds.length} rounds auto-filled & saved!`,'success');
+  setTimeout(()=>document.getElementById('save-alert').innerHTML='',4000);
+}
+
+// Auto-fill finals score inputs for current round
+function autoFillFinals(){
+  ['A','B','C'].forEach(k=>{
+    const el1=document.getElementById(`fs_${k}_1`);
+    const el2=document.getElementById(`fs_${k}_2`);
+    if(!el1||!el2)return;
+    const[s1,s2]=randScore();
+    el1.value=s1;
+    el2.value=s2;
+  });
+}
+
+/* ============================================================
+   FINALS STANDINGS HELPERS
+============================================================ */
+function recordFinalsResult(winPair, losePair, winScore, loseScore, court){
+  winPair.forEach(p=>{
+    if(!finalsStandings[p.id])return;
+    finalsStandings[p.id].mp++;
+    finalsStandings[p.id].w++;
+    finalsStandings[p.id].pts+=2;
+    finalsStandings[p.id].scored+=winScore;
+    finalsStandings[p.id].conceded+=loseScore;
+    finalsStandings[p.id].court='Ct '+court;
+  });
+  losePair.forEach(p=>{
+    if(!finalsStandings[p.id])return;
+    finalsStandings[p.id].mp++;
+    finalsStandings[p.id].l++;
+    finalsStandings[p.id].scored+=loseScore;
+    finalsStandings[p.id].conceded+=winScore;
+    finalsStandings[p.id].court='Ct '+court;
+  });
+}
+
+function renderFinalsStandings(){
+  const tb=document.getElementById('finals-standings-body');
+  if(!tb)return;
+  const rows=Object.values(finalsStandings);
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="10" class="empty">Set up finals to see standings</td></tr>';return;
+  }
+  // Update current court for each player
+  const s=finalsState;
+  rows.forEach(r=>{
+    if(s.courtA.find(p=>p.id===r.id)) r.court='<span style="color:var(--accent);font-weight:600">Ct A</span>';
+    else if(s.courtB.find(p=>p.id===r.id)) r.court='<span style="color:var(--accent2);font-weight:600">Ct B</span>';
+    else if(s.courtC.find(p=>p.id===r.id)) r.court='<span style="color:var(--accent3);font-weight:600">Ct C</span>';
+    else if(s.rest.find(p=>p.id===r.id)) r.court='<span style="color:var(--muted)">Rest</span>';
+  });
+  const sorted=[...rows].sort((a,b)=>b.w-a.w||((b.scored-b.conceded)-(a.scored-a.conceded))||b.scored-a.scored);
+  tb.innerHTML=sorted.map((p,i)=>{
+    const diff=p.scored-p.conceded;
+    const courtColor=p.court.includes('Ct A')?'var(--accent)':p.court.includes('Ct B')?'var(--accent2)':p.court.includes('Ct C')?'var(--accent3)':'var(--muted)';
+    return`<tr>
+      <td class="rank-num${i<4?' top':''}">${i+1}</td>
+      <td class="mono" style="color:var(--muted)">#${p.seed}</td>
+      <td><span class="badge badge-${p.gender.toLowerCase()}" style="margin-right:5px">${p.gender}</span><strong>${p.name}</strong></td>
+      <td class="mono">${p.mp}</td>
+      <td class="mono" style="color:var(--accent);font-weight:700">${p.w}</td>
+      <td class="mono" style="color:var(--danger)">${p.l}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">${p.pts}</td>
+      <td>${diff>0?`<span class="diff-pos">+${diff}</span>`:diff<0?`<span class="diff-neg">${diff}</span>`:`<span style="color:var(--muted)">0</span>`}</td>
+      <td class="mono">${p.scored}</td>
+      <td style="font-size:12px">${p.court}</td>
+    </tr>`;
+  }).join('');
+}
+
+function confirmFullReset(){
+  const ok=confirm('⚠️ Reset everything?\n\nThis will clear ALL players, fixtures, scores, standings, finals and King of Court data.\n\nThis cannot be undone.');
+  if(!ok)return;
+  fullReset();
+}
+
+function fullReset(){
+  // Clear all state
+  players=[];
+  rounds=[];
+  scores={};
+  viewRound=0;
+  scoreViewRound=0;
+  finalsState={courtA:[],courtB:[],courtC:[],rest:[],round:1};
+  finalsStandings={};
+  finalsRounds=[];
+  kocState={players4:[],teamA:[],teamB:[],mainDone:false,winnerTeam:[],loserTeam:[],champion:null,runnerUp:null};
+
+  // Reset roster UI
+  renderRoster();
+
+  // Reset fixtures page
+  document.getElementById('fix-round-title').textContent='Round 1 of 8';
+  document.getElementById('fixture-courts').innerHTML='';
+  document.getElementById('rest-list').innerHTML='';
+  document.getElementById('clash-alert').innerHTML='';
+  document.getElementById('swap-panel')&&(document.getElementById('swap-panel').querySelector('#swap-a').innerHTML='');
+
+  // Reset overview
+  document.getElementById('overview-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';
+  document.getElementById('matrix-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';
+
+  // Reset scores
+  document.getElementById('score-entry-wrap').innerHTML='<div class="empty">Generate fixtures first</div>';
+  document.getElementById('save-alert').innerHTML='';
+
+  // Reset standings
+  document.getElementById('standings-body').innerHTML='<tr><td colspan="10" class="empty">No data yet</td></tr>';
+  document.getElementById('st-players').textContent='0';
+  document.getElementById('st-rounds').textContent='0/8';
+  document.getElementById('st-leader').textContent='—';
+  document.getElementById('qual-alert').innerHTML='';
+
+  // Reset finals
+  document.getElementById('fa-players').innerHTML='<span class="text-muted">No players</span>';
+  document.getElementById('fb-players').innerHTML='<span class="text-muted">No players</span>';
+  document.getElementById('fc-players').innerHTML='<span class="text-muted">No players</span>';
+  document.getElementById('finals-round-num').textContent='1';
+  const doneBadge=document.getElementById('finals-done-badge');
+  if(doneBadge)doneBadge.style.display='none';
+  document.getElementById('finals-score-entry').innerHTML='<div class="empty">Set up finals first</div>';
+  document.getElementById('finals-move-log').innerHTML='';
+  document.getElementById('finals-ladder').innerHTML='<span class="text-muted">No players assigned</span>';
+  document.getElementById('finals-standings-body').innerHTML='<tr><td colspan="10" class="empty">Set up finals to see standings</td></tr>';
+  // Restore btn-row visibility in finals card
+  document.querySelectorAll('#page-finals .btn-row').forEach(r=>r.style.display='');
+
+  // Reset KoC
+  resetKoc();
+
+  // Navigate back to setup
+  showPage('setup', document.querySelectorAll('.nav-item')[0]);
+}
+
+/* ============================================================
+   FINALS ROUND HISTORY + EDIT
+============================================================ */
+function renderFinalsHistory(){
+  const el=document.getElementById('finals-history');
+  if(!el)return;
+  if(!finalsRounds.length){
+    el.innerHTML='<span class="text-muted" style="font-size:13px">No rounds completed yet</span>';
+    return;
+  }
+
+  const courtColor={A:'var(--accent)',B:'var(--accent2)',C:'var(--accent3)'};
+
+  el.innerHTML=finalsRounds.map((r,idx)=>{
+    const courts=['A','B','C'];
+    const matchRows=courts.map(k=>{
+      const players=r['court'+k];
+      const sc=r.scores[k];
+      if(!players||players.length<4||!sc)return'';
+      const[h1,h2]=getHandicapS2(players.slice(0,2),players.slice(2,4));
+      const tot1=sc.s1+h1, tot2=sc.s2+h2;
+      const result=tot1>tot2?'pair1':'pair2';
+      const p1=players.slice(0,2).map(p=>p.name).join(' & ');
+      const p2=players.slice(2,4).map(p=>p.name).join(' & ');
+      return`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;flex-wrap:wrap;border-bottom:0.5px solid var(--border)">
+        <span style="font-size:10px;font-weight:700;color:${courtColor[k]};width:55px;flex-shrink:0;text-transform:uppercase">Ct ${k}</span>
+        <span style="font-size:12px;flex:1;${result==='pair1'?'font-weight:700;color:var(--accent)':''}">${p1}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">${sc.s1} — ${sc.s2}</span>
+        ${h1||h2?`<span class="badge badge-hc">${h1>0?'+'+h1+' HC':''}${h2>0?'+'+h2+' HC':''}</span>`:''}
+        <span style="font-size:12px;flex:1;text-align:right;${result==='pair2'?'font-weight:700;color:var(--accent)':''}">${p2}</span>
+      </div>`;
+    }).join('');
+
+    return`<div style="margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2)">
+        <span style="font-size:13px;font-weight:700">Round ${r.round}</span>
+        ${r.log&&r.log.length?`<span style="font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.log[0]}</span>`:''}
+        <button class="btn btn-warn btn-sm" onclick="editFinalsRound(${idx})" style="margin-left:auto;flex-shrink:0">✏ Edit</button>
+      </div>
+      <div style="padding:8px 14px">${matchRows||'<span style="color:var(--muted);font-size:12px">No scores recorded</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+let editingRoundIdx=null;
+
+function editFinalsRound(idx){
+  editingRoundIdx=idx;
+  const r=finalsRounds[idx];
+  const courts=['A','B','C'];
+
+  const rows=courts.map(k=>{
+    const players=r['court'+k];
+    const sc=r.scores[k];
+    if(!players||players.length<4)return`<div style="color:var(--muted);font-size:13px;padding:6px 0">Court ${k}: not enough players</div>`;
+    const[h1,h2]=getHandicapS2(players.slice(0,2),players.slice(2,4));
+    const hb1=h1>0?`<span class="badge badge-hc">+${h1} HC</span>`:'';
+    const hb2=h2>0?`<span class="badge badge-hc">+${h2} HC</span>`:'';
+    const t1=players.slice(0,2).map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    const t2=players.slice(2,4).map(p=>`<span class="badge badge-${p.gender.toLowerCase()}">${p.name}</span>`).join(' ');
+    return`<div class="finals-score-row">
+      <span style="font-size:10px;font-weight:700;color:var(--accent${k==='B'?'2':k==='C'?'3':''});width:65px;flex-shrink:0;text-transform:uppercase">Court ${k}</span>
+      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;align-items:center">${t1} ${hb1}</div>
+      <input type="number" class="score-box" id="edit_${k}_1" value="${sc?sc.s1:''}" min="0" placeholder="0" style="width:50px"/>
+      <span class="score-sep">—</span>
+      <input type="number" class="score-box" id="edit_${k}_2" value="${sc?sc.s2:''}" min="0" placeholder="0" style="width:50px"/>
+      <div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:flex-end">${hb2} ${t2}</div>
+    </div>`;
+  }).join('');
+
+  // Show in an inline edit panel
+  const histEl=document.getElementById('finals-history');
+  const editPanel=document.createElement('div');
+  editPanel.id='finals-edit-panel';
+  editPanel.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;z-index:1000;min-width:560px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+  editPanel.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div style="font-size:16px;font-weight:800">Edit Round ${r.round} Scores</div>
+      <button class="btn btn-sm" onclick="closeEditPanel()">✕ Close</button>
+    </div>
+    <div style="font-size:12px;color:var(--warn);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius);padding:8px 12px;margin-bottom:1rem">
+      ⚠ Editing past scores will recalculate Stage 2 standings from scratch.
+    </div>
+    ${rows}
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-accent" onclick="saveEditedRound()">Save Changes</button>
+      <button class="btn" onclick="closeEditPanel()">Cancel</button>
+    </div>
+    <div id="edit-alert" style="margin-top:.5rem"></div>
+  `;
+  // Backdrop
+  const backdrop=document.createElement('div');
+  backdrop.id='edit-backdrop';
+  backdrop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999';
+  backdrop.onclick=closeEditPanel;
+  document.body.appendChild(backdrop);
+  document.body.appendChild(editPanel);
+}
+
+function closeEditPanel(){
+  document.getElementById('finals-edit-panel')?.remove();
+  document.getElementById('edit-backdrop')?.remove();
+  editingRoundIdx=null;
+}
+
+function saveEditedRound(){
+  if(editingRoundIdx===null)return;
+  const r=finalsRounds[editingRoundIdx];
+  const courts=['A','B','C'];
+  let changed=false;
+  courts.forEach(k=>{
+    const e1=document.getElementById(`edit_${k}_1`);
+    const e2=document.getElementById(`edit_${k}_2`);
+    if(!e1||!e2)return;
+    const s1=parseInt(e1.value), s2=parseInt(e2.value);
+    if(!isNaN(s1)&&!isNaN(s2)){
+      r.scores[k]={s1,s2};
+      changed=true;
+    }
+  });
+  if(!changed){document.getElementById('edit-alert').innerHTML='<div class="alert alert-warn">Enter at least one score.</div>';return;}
+
+  // Recalculate all Stage 2 standings from scratch using stored snapshots
+  recalcFinalsStandings();
+  closeEditPanel();
+  renderFinalsStandings();
+  renderFinalsHistory();
+}
+
+function recalcFinalsStandings(){
+  // Reset all stats
+  Object.values(finalsStandings).forEach(p=>{
+    p.mp=0;p.w=0;p.l=0;p.pts=0;p.scored=0;p.conceded=0;
+  });
+  // Replay all saved rounds
+  finalsRounds.forEach(r=>{
+    ['A','B','C'].forEach(k=>{
+      const players=r['court'+k];
+      const sc=r.scores[k];
+      if(!players||players.length<4||!sc)return;
+      const[h1,h2]=getHandicapS2(players.slice(0,2),players.slice(2,4));
+      const tot1=sc.s1+h1, tot2=sc.s2+h2;
+      if(tot1===tot2)return;
+      const winPair=tot1>tot2?players.slice(0,2):players.slice(2,4);
+      const losePair=tot1>tot2?players.slice(2,4):players.slice(0,2);
+      const winScore=tot1>tot2?tot1:tot2;
+      const loseScore=tot1>tot2?tot2:tot1;
+      recordFinalsResult(winPair,losePair,winScore,loseScore,k);
+    });
+  });
+}
+
+/* King of Court handicap — same as Stage 1 (12-min format) */
+function getHandicapKoc(t1,t2){
+  const gc=t=>t.map(p=>p.gender).sort().join('');
+  const comp=g=>g==='MM'?'MM':g==='FF'?'FF':'MF';
+  const c1=comp(gc(t1)),c2=comp(gc(t2));
+  if(c1===c2)return[0,0];
+  if(c1==='FF'&&c2==='MM')return[5,0]; if(c1==='MM'&&c2==='FF')return[0,5];
+  if(c1==='MF'&&c2==='MM')return[3,0]; if(c1==='MM'&&c2==='MF')return[0,3];
+  if(c1==='FF'&&c2==='MF')return[2,0]; if(c1==='MF'&&c2==='FF')return[0,2];
+  return[0,0];
+}
+
+/* ============================================================
+   TOURNAMENT SUMMARY — PRINT / PDF
+============================================================ */
+function exportTournamentPDF(){
+  const{sorted:s1Sorted,roundsPlayed}=computeStats();
+  const s2Sorted=Object.values(finalsStandings).sort((a,b)=>b.w-a.w||((b.scored-b.conceded)-(a.scored-a.conceded))||b.scored-a.scored);
+  const champ=kocState.champion;
+  const runnerUp=kocState.runnerUp;
+  const now=new Date().toLocaleDateString('en-MY',{year:'numeric',month:'long',day:'numeric'});
+
+  const gBadge=p=>`<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;background:${p.gender==='M'?'#dbeafe':'#fce7f3'};color:${p.gender==='M'?'#1e40af':'#9d174d'}">${p.gender}</span>`;
+
+  const s1Table=s1Sorted.map((p,i)=>`
+    <tr style="${i===13?'border-bottom:2px solid #16a34a':''};${i<14?'background:#f0fdf4':i%2===0?'':'background:#f9fafb'}">
+      <td style="padding:5px 10px;font-weight:700;color:${i<14?'#16a34a':'#374151'}">${i+1}</td>
+      <td style="padding:5px 10px">${gBadge(p)} ${p.name}</td>
+      <td style="padding:5px 10px;text-align:center">${p.mp}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:700">${p.w}</td>
+      <td style="padding:5px 10px;text-align:center">${p.d}</td>
+      <td style="padding:5px 10px;text-align:center">${p.l}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:800;color:#16a34a">${p.pts}</td>
+      <td style="padding:5px 10px;text-align:center;color:${(p.scored-p.conceded)>=0?'#16a34a':'#dc2626'}">${p.scored-p.conceded>0?'+':''}${p.scored-p.conceded}</td>
+      <td style="padding:5px 10px;text-align:center">${p.scored}</td>
+      <td style="padding:5px 10px;text-align:center">${i<14?'<span style="background:#dcfce7;color:#16a34a;padding:1px 8px;border-radius:3px;font-size:10px;font-weight:700">Q</span>':''}</td>
+    </tr>`).join('');
+
+  const s2Table=s2Sorted.length?s2Sorted.map((p,i)=>`
+    <tr style="${i%2===0?'':'background:#f9fafb'}">
+      <td style="padding:5px 10px;font-weight:700;color:#1d4ed8">${i+1}</td>
+      <td style="padding:5px 10px;color:#6b7280">#${p.seed}</td>
+      <td style="padding:5px 10px">${gBadge(p)} ${p.name}</td>
+      <td style="padding:5px 10px;text-align:center">${p.mp}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:700;color:#16a34a">${p.w}</td>
+      <td style="padding:5px 10px;text-align:center;color:#dc2626">${p.l}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:800;color:#1d4ed8">${p.pts}</td>
+      <td style="padding:5px 10px;text-align:center;color:${(p.scored-p.conceded)>=0?'#16a34a':'#dc2626'}">${p.scored-p.conceded>0?'+':''}${p.scored-p.conceded}</td>
+      <td style="padding:5px 10px;text-align:center">${p.scored}</td>
+    </tr>`).join(''):'<tr><td colspan="9" style="padding:20px;text-align:center;color:#9ca3af">Finals not completed</td></tr>';
+
+  const historyRows=finalsRounds.map(r=>{
+    const courts=['A','B','C'].map(k=>{
+      const pl=r['court'+k];const sc=r.scores[k];
+      if(!pl||pl.length<4||!sc)return'';
+      const[h1,h2]=getHandicapS2(pl.slice(0,2),pl.slice(2,4));
+      const tot1=sc.s1+h1,tot2=sc.s2+h2;
+      const w=tot1>tot2?'pair1':'pair2';
+      return`<div style="margin-bottom:3px;font-size:11px">
+        <strong style="color:#1d4ed8">Ct ${k}</strong> &nbsp;
+        <span style="${w==='pair1'?'font-weight:700':''}">${pl.slice(0,2).map(p=>p.name).join('&')}</span>
+        &nbsp;<strong>${sc.s1}—${sc.s2}</strong>${h1||h2?` (+HC)`:''}
+        &nbsp;<span style="${w==='pair2'?'font-weight:700':''}">${pl.slice(2,4).map(p=>p.name).join('&')}</span>
+      </div>`;
+    }).join('');
+    return`<tr><td style="padding:8px 10px;font-weight:700;vertical-align:top">Rd ${r.round}</td><td style="padding:8px 10px">${courts}</td><td style="padding:8px 10px;font-size:11px;color:#6b7280;vertical-align:top">${r.log?r.log.slice(0,2).join('<br>'):''}</td></tr>`;
+  }).join('');
+
+  const win=w=>`<html><head><title>Tournament Summary</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff;padding:20px}
+    h1{font-size:22px;font-weight:900;margin-bottom:2px}
+    h2{font-size:15px;font-weight:700;margin:20px 0 8px;padding:6px 10px;background:#1e293b;color:#fff;border-radius:4px}
+    h3{font-size:13px;font-weight:700;margin:14px 0 6px;color:#374151}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    th{background:#1e293b;color:#fff;padding:6px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.04em}
+    td{padding:5px 10px;border-bottom:1px solid #e5e7eb;font-size:11px}
+    .meta{color:#6b7280;font-size:11px;margin-bottom:16px}
+    .champ-box{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:16px;text-align:center;margin:12px 0}
+    .champ-name{font-size:28px;font-weight:900;color:#b45309}
+    .sub{font-size:12px;color:#6b7280;margin-top:4px}
+    @media print{body{padding:10px}h2{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}.champ-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+    <h1>🥒 Tournament Summary</h1>
+    <div class="meta">Generated: ${now} &nbsp;·&nbsp; Players: ${players.length} &nbsp;·&nbsp; Stage 1 rounds played: ${roundsPlayed}/8</div>
+
+    ${champ?`<div class="champ-box"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#b45309;margin-bottom:4px">🏆 CHAMPION</div><div class="champ-name">${champ.name}</div><div class="sub">Runner-up: ${runnerUp?.name||'—'} &nbsp;·&nbsp; 3rd/4th: ${kocState.loserTeam?.map(p=>p.name).join(' & ')||'—'}</div></div>`:''}
+
+    <h2>Stage 1 — Ranking Standings</h2>
+    <table>
+      <thead><tr><th>#</th><th>Player</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>Diff</th><th>Scored</th><th>Status</th></tr></thead>
+      <tbody>${s1Table}</tbody>
+    </table>
+
+    <h2>Stage 2 — Finals Ladder Standings</h2>
+    <table>
+      <thead><tr><th>#</th><th>Seed</th><th>Player</th><th>MP</th><th>W</th><th>L</th><th>Pts</th><th>Diff</th><th>Scored</th></tr></thead>
+      <tbody>${s2Table}</tbody>
+    </table>
+
+    ${finalsRounds.length?`<h2>Stage 2 — Round by Round Results</h2>
+    <table>
+      <thead><tr><th>Round</th><th>Court Results</th><th>Player Moves</th></tr></thead>
+      <tbody>${historyRows}</tbody>
+    </table>`:''}
+
+    ${kocState.players4.length?`<h2>King of Court</h2>
+    <h3>Players</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      ${kocState.players4.map((p,i)=>`<div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px 14px;text-align:center"><div style="font-size:10px;color:#6b7280;font-weight:700">SEED ${i+1}</div><div style="font-size:14px;font-weight:700">${p.name}</div></div>`).join('')}
+    </div>
+    ${kocState.mainScore?`<h3>Main Match (12 min)</h3>
+    <p>${kocState.teamA.map(p=>p.name).join(' & ')} &nbsp;<strong>${kocState.mainScore.a} — ${kocState.mainScore.b}</strong>&nbsp; ${kocState.teamB.map(p=>p.name).join(' & ')}
+    ${kocState.mainScore.h1||kocState.mainScore.h2?` (Handicap: ${kocState.mainScore.h1>0?'Team A +'+kocState.mainScore.h1:kocState.mainScore.h2>0?'Team B +'+kocState.mainScore.h2:''})`:''}
+    &nbsp;→ Winner: <strong>${kocState.winnerTeam.map(p=>p.name).join(' & ')}</strong></p>`:''}
+    ${champ?`<h3>Championship Decider (4 min)</h3>
+    <p>${kocState.winnerTeam[0].name} vs ${kocState.winnerTeam[1].name} → Champion: <strong>${champ.name}</strong></p>`:''}
+    `:''}
+
+    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:10px;text-align:center">
+      Pickleball Tournament Dashboard &nbsp;·&nbsp; ${now}
+    </div>
+  </body></html>`;
+
+  const printWin=window.open('','_blank','width=900,height=700');
+  printWin.document.write(win());
+  printWin.document.close();
+  setTimeout(()=>printWin.print(),600);
+}
+
+function showAlert(id,msg,type){
+  document.getElementById(id).innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+}
+</script>
+</body>
+</html>
